@@ -74,10 +74,12 @@ case $1 in
     "nslu2")
 	echo "Building NSLU2 ARMv5TE XScale root filesystem"
 	export ARCH=arm
-	CC_PREFIX=arm-none-linux-gnueabi
-	CC_DIR=/var/linus/arm-2010q1
-	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
-	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv5te -mtune=xscale"
+	# This big-endian toolchain was generated with crosstool-ng
+	# configured for bigendian ARM and Linux as operating system
+	CC_PREFIX=armeb-unknown-linux-gnueabi
+	CC_DIR=/home/linus/x-tools/armeb-unknown-linux-gnueabi
+	LIBCBASE=${CC_DIR}/${CC_PREFIX}/sysroot
+	CFLAGS="-msoft-float -marm -mthumb -mthumb-interwork -march=armv5te -mtune=xscale -mbig-endian"
 	cp etc/inittab-xscale etc/inittab
 	echo "nslu2" > etc/hostname
 	;;
@@ -116,7 +118,7 @@ case $1 in
 	CC_PREFIX=${CC_PREFIX}
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
 	cp etc/inittab-msm8660 etc/inittab
-	echo "Ux500" > etc/hostname
+	echo "msm8660" > etc/hostname
 	;;
     "nhk8815")
 	echo "Building Nomadik NHK8815 root filesystem"
