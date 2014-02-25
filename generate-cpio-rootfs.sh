@@ -7,6 +7,8 @@ BUILDDIR=${CURDIR}/build
 
 STRACEVER=strace-4.7
 STRACE=${CURDIR}/${STRACEVER}
+BUILD_BUSYBOX=1
+BUILD_ALSA=
 
 # Helper function to copy one level of files and then one level
 # of links from a directory to another directory.
@@ -58,7 +60,7 @@ case $1 in
 	echo "i586" > etc/hostname
 	;;
     "h3600")
-	echo "Building SA110 Compaq h3600 ARMv4 root filesystem"
+	echo "Building SA1110 Compaq h3600 ARMv4 root filesystem"
 	export ARCH=arm
 	# Use ARMv4l base for SA1100 rootfs builds
 	# This is the convention of Rob Landley's binaries
@@ -70,6 +72,20 @@ case $1 in
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork -mcpu=strongarm1100"
 	cp etc/inittab-sa1100 etc/inittab
 	echo "h3600" > etc/hostname
+	;;
+    "footbridge")
+	echo "Building SA110 Footbridge ARMv4 root filesystem"
+	export ARCH=arm
+	# Use ARMv4l base for SA110 rootfs builds
+	# This is the convention of Rob Landley's binaries
+	CC_PREFIX=armv4l
+	CC_DIR=/var/linus/cross-compiler-armv4l
+	LIBCBASE=${CC_DIR}
+	CC_DIR=${CC_DIR}
+	CC_PREFIX=${CC_PREFIX}
+	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork -mcpu=strongarm110"
+	cp etc/inittab-footbridge etc/inittab
+	echo "footbridge" > etc/hostname
 	;;
     "nslu2")
 	echo "Building NSLU2 ARMv5TE XScale root filesystem"
@@ -191,7 +207,7 @@ case $1 in
 	echo "Vexpress" > etc/hostname
 	;;
     *)
-	echo "Usage: $0 [i486|i586|h3600|integrator|msm8660|nhk8815|u300|ux500|exynos|versatile|vexpress]"
+	echo "Usage: $0 [i486|i586|h3600|footbridge|integrator|msm8660|nhk8815|u300|ux500|exynos|versatile|vexpress]"
 	exit 1
 	;;
 esac
@@ -225,16 +241,6 @@ else
     echo "OK"
 fi
 
-# Clone the busybox git if we don't have it...
-if [ ! -d busybox ] ; then
-    echo "It appears we're missing a busybox git, cloning it."
-    git clone git://busybox.net/busybox.git busybox
-    if [ ! -d busybox ] ; then
-	echo "Failed. ABORTING."
-	exit 1
-    fi
-fi
-
 # Copy the template of static files to be used
 cp filelist.txt filelist-final.txt
 
@@ -248,11 +254,27 @@ if [ -d ${BUILDDIR} ] ; then
     rm -rf ${BUILDDIR}
 fi
 mkdir ${STAGEDIR}
+mkdir ${STAGEDIR}/bin
 mkdir ${STAGEDIR}/lib
 mkdir ${STAGEDIR}/sbin
+mkdir ${STAGEDIR}/usr
+mkdir ${STAGEDIR}/usr/bin
+mkdir ${STAGEDIR}/usr/lib
+mkdir ${STAGEDIR}/usr/sbin
 mkdir ${BUILDDIR}
 
-# For using the git version
+if test ${BUILD_BUSYBOX} ; then
+
+# Clone the busybox git if we don't have it...
+if [ ! -d busybox ] ; then
+    echo "It appears we're missing a busybox git, cloning it."
+    git clone git://busybox.net/busybox.git busybox
+    if [ ! -d busybox ] ; then
+	echo "Failed. ABORTING."
+	exit 1
+    fi
+fi
+
 cd busybox
 make O=${BUILDDIR} defconfig
 echo "Configuring cross compiler etc..."
@@ -268,6 +290,8 @@ sed -i -e "s/CONFIG_FEATURE_EJECT_SCSI=y/\# CONFIG_FEATURE_EJECT_SCSI is not set
 make O=${BUILDDIR}
 make O=${BUILDDIR} install
 cd ${CURDIR}
+
+fi
 
 # First the flat library where arch-independent stuff will
 # end up
@@ -304,7 +328,7 @@ for file in ${LIBLINKS} ; do
     echo "slink /lib/${BASE} ${TARGET} 755 0 0" >> filelist-final.txt
 done;
 
-# Add multiarch libarary dir
+# Add multiarch library dir
 if [ -d ${STAGEDIR}/lib/${CC_PREFIX} ] ; then
 echo "dir /lib/${CC_PREFIX} 755 0 0" >> filelist-final.txt
 CLIBFILES=`find ${STAGEDIR}/lib/${CC_PREFIX} -maxdepth 1 -type f`
@@ -350,6 +374,46 @@ echo "Compiling fbtest..."
 ${CC_PREFIX}-gcc ${CFLAGS} -o ${STAGEDIR}/usr/bin/fbtest fbtest/fbtest.c
 echo "file /usr/bin/fbtest ${STAGEDIR}/usr/bin/fbtest 755 0 0" >> filelist-final.txt
 
+if test ${BUILD_ALSA} ; then
+
+# Clone the alsa-lib git if we don't have it...
+if [ ! -d alsa-lib ] ; then
+    echo "It appears we're missing a alsa-lib git, cloning it."
+    git clone git://git.alsa-project.org/alsa-lib.git alsa-lib
+    if [ ! -d alsa-lib ] ; then
+	echo "Failed. ABORTING."
+	exit 1
+    fi
+fi
+echo "Compiling alsa-lib..."
+cd alsa-lib
+touch ltconfig
+libtoolize --force --copy --automake
+aclocal ${ACLOCAL_FLAGS}
+autoheader
+automake --foreign --copy --add-missing
+autoconf
+./configure --host=${CC_PREFIX} || exit 1
+make clean
+make
+make install DESTDIR=${BUILDDIR}
+cd ${CURDIR}
+echo "file /usr/lib/libasound.so.2.0.0 ${BUILDDIR}/usr/lib/libasound.so.2.0.0 755 0 0" >> filelist-final.txt
+echo "slink /usr/lib/libasound.so /usr/lib/libasound.so.2.0.0 755 0 0" >> filelist-final.txt
+echo "slink /usr/lib/libasound.so.2 /usr/lib/libasound.so.2.0.0 755 0 0" >> filelist-final.txt
+
+# Clone the alsa-utils git if we don't have it...
+if [ ! -d alsa-utils ] ; then
+    echo "It appears we're missing a alsa-utils git, cloning it."
+    git clone git://git.alsa-project.org/alsa-utils.git alsa-utils
+    if [ ! -d alsa-utils ] ; then
+	echo "Failed. ABORTING."
+	exit 1
+    fi
+fi
+echo "Compiling alsa-utils..."
+fi
+
 # Extra stuff per platform
 case $1 in
     "i486")
@@ -359,6 +423,8 @@ case $1 in
     "h3600")
 	# Splash image for VGA console
 	echo "file /etc/splash-320x240.ppm etc/splash-320x240.ppm 644 0 0" >> filelist-final.txt
+	;;
+    "footbridge")
 	;;
     "nslu2")
 	;;
