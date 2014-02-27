@@ -148,6 +148,18 @@ case $1 in
 	cp etc/inittab-nhk8815 etc/inittab
 	echo "NHK8815" > etc/hostname
 	;;
+    "pb1176")
+	echo "Building ARM RealView PB1176 root filesystem"
+	export ARCH=arm
+	CC_PREFIX=arm-linux-gnueabihf
+	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.8-2013.10_linux
+	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
+	CC_DIR=${CC_DIR}
+	CC_PREFIX=${CC_PREFIX}
+	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=arm1176jzf-s"
+	cp etc/inittab-realview etc/inittab
+	echo "PB1176" > etc/hostname
+	;;
     "u300")
 	echo "Building ST-Ericsson U300 root filesystem"
 	export ARCH=arm
@@ -207,7 +219,7 @@ case $1 in
 	echo "Vexpress" > etc/hostname
 	;;
     *)
-	echo "Usage: $0 [i486|i586|h3600|footbridge|integrator|msm8660|nhk8815|u300|ux500|exynos|versatile|vexpress]"
+	echo "Usage: $0 [i486|i586|h3600|footbridge|integrator|msm8660|nhk8815|pb1176|u300|ux500|exynos|versatile|vexpress]"
 	exit 1
 	;;
 esac
@@ -435,6 +447,10 @@ case $1 in
     "msm8660")
 	;;
     "nhk8815")
+	;;
+    "pb1176")
+	# Splash image for VGA console
+	# echo "file /etc/splash.ppm etc/splash-640x480-rgba5551.ppm 644 0 0" >> filelist-final.txt
 	;;
     "u300")
 	;;
