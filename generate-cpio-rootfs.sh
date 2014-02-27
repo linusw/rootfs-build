@@ -40,8 +40,6 @@ case $1 in
 	CC_PREFIX=i486
 	CC_DIR=/var/linus/cross-compiler-i486
 	LIBCBASE=${CC_DIR}
-	CC_DIR=${CC_DIR}
-	CC_PREFIX=${CC_PREFIX}
 	CFLAGS="-march=i486 -mtune=i486 -m32"
 	cp etc/inittab-pc etc/inittab
 	echo "i486" > etc/hostname
@@ -52,8 +50,6 @@ case $1 in
 	CC_PREFIX=i586
 	CC_DIR=/var/linus/cross-compiler-i586
 	LIBCBASE=${CC_DIR}
-	CC_DIR=${CC_DIR}
-	CC_PREFIX=${CC_PREFIX}
 	# Skip -mtune pentium-mmx for generic Pentium image
 	CFLAGS="-march=i586 -mtune=pentium-mmx -m32"
 	cp etc/inittab-pc etc/inittab
@@ -67,8 +63,6 @@ case $1 in
 	CC_PREFIX=armv4l
 	CC_DIR=/var/linus/cross-compiler-armv4l
 	LIBCBASE=${CC_DIR}
-	CC_DIR=${CC_DIR}
-	CC_PREFIX=${CC_PREFIX}
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork -mcpu=strongarm1100"
 	cp etc/inittab-sa1100 etc/inittab
 	echo "h3600" > etc/hostname
@@ -81,8 +75,6 @@ case $1 in
 	CC_PREFIX=armv4l
 	CC_DIR=/var/linus/cross-compiler-armv4l
 	LIBCBASE=${CC_DIR}
-	CC_DIR=${CC_DIR}
-	CC_PREFIX=${CC_PREFIX}
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork -mcpu=strongarm110"
 	cp etc/inittab-footbridge etc/inittab
 	echo "footbridge" > etc/hostname
@@ -130,8 +122,6 @@ case $1 in
 	CC_PREFIX=arm-linux-gnueabihf
 	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.8-2013.10_linux
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
-	CC_DIR=${CC_DIR}
-	CC_PREFIX=${CC_PREFIX}
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
 	cp etc/inittab-msm8660 etc/inittab
 	echo "msm8660" > etc/hostname
@@ -142,8 +132,6 @@ case $1 in
 	CC_PREFIX=arm-linux-gnueabi
 	CC_DIR=/var/linus/arm-2010q1
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
-	CC_DIR=${CC_DIR}
-	CC_PREFIX=${CC_PREFIX}
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv5t -mtune=arm9tdmi"
 	cp etc/inittab-nhk8815 etc/inittab
 	echo "NHK8815" > etc/hostname
@@ -151,11 +139,9 @@ case $1 in
     "pb1176")
 	echo "Building ARM RealView PB1176 root filesystem"
 	export ARCH=arm
-	CC_PREFIX=arm-linux-gnueabihf
-	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.8-2013.10_linux
+	CC_PREFIX=arm-linux-gnueabi
+	CC_DIR=/var/linus/arm-2010q1
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
-	CC_DIR=${CC_DIR}
-	CC_PREFIX=${CC_PREFIX}
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=arm1176jzf-s"
 	cp etc/inittab-realview etc/inittab
 	echo "PB1176" > etc/hostname
@@ -166,8 +152,6 @@ case $1 in
 	CC_PREFIX=arm-linux-gnueabi
 	CC_DIR=/var/linus/arm-2010q1
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
-	CC_DIR=${CC_DIR}
-	CC_PREFIX=${CC_PREFIX}
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv5t -mtune=arm9tdmi"
 	cp etc/inittab-u300 etc/inittab
 	echo "U300" > etc/hostname
@@ -178,8 +162,6 @@ case $1 in
 	CC_PREFIX=arm-linux-gnueabihf
 	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.8-2013.10_linux
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
-	CC_DIR=${CC_DIR}
-	CC_PREFIX=${CC_PREFIX}
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
 	cp etc/inittab-ux500 etc/inittab
 	echo "Ux500" > etc/hostname
@@ -190,8 +172,6 @@ case $1 in
 	CC_PREFIX=arm-linux-gnueabihf
 	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.8-2013.10_linux
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
-	CC_DIR=${CC_DIR}
-	CC_PREFIX=${CC_PREFIX}
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a15"
 	cp etc/inittab-exynos etc/inittab
 	echo "Exynos" > etc/hostname
@@ -212,8 +192,6 @@ case $1 in
 	CC_PREFIX=arm-linux-gnueabihf
 	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.8-2013.10_linux
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
-	CC_DIR=${CC_DIR}
-	CC_PREFIX=${CC_PREFIX}
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a15"
 	cp etc/inittab-vexpress etc/inittab
 	echo "Vexpress" > etc/hostname
