@@ -3,6 +3,7 @@ file /bin/busybox stage/bin/busybox 755 0 0
 slink /init bin/busybox 755 0 0
 dir /sbin 755 0 0
 dir /usr 755 0 0
+dir /usr/lib 755 0 0
 dir /usr/bin 755 0 0
 dir /usr/sbin 755 0 0
 dir /boot 755 0 0
