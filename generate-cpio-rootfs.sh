@@ -139,10 +139,11 @@ case $1 in
     "pb1176")
 	echo "Building ARM RealView PB1176 root filesystem"
 	export ARCH=arm
-	CC_PREFIX=arm-linux-gnueabi
-	CC_DIR=/var/linus/arm-2010q1
+	CC_PREFIX=arm-linux-gnueabihf
+	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.8-2013.10_linux
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
-	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=arm1176jzf-s"
+	# Notice: no thumb VFP hardfloat on Thumb1
+	CFLAGS="-marm -mabi=aapcs-linux -mcpu=arm1176jzf-s"
 	cp etc/inittab-realview etc/inittab
 	echo "PB1176" > etc/hostname
 	;;
