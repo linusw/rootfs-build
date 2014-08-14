@@ -129,10 +129,10 @@ case $1 in
     "nhk8815")
 	echo "Building Nomadik NHK8815 root filesystem"
 	export ARCH=arm
-	CC_PREFIX=arm-linux-gnueabi
-	CC_DIR=/var/linus/arm-2010q1
-	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
-	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv5t -mtune=arm9tdmi"
+	CC_PREFIX=armv5l
+	CC_DIR=/var/linus/cross-compiler-armv5l
+	LIBCBASE=${CC_DIR}
+	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork -march=armv5te -mtune=arm926ej-s"
 	cp etc/inittab-nhk8815 etc/inittab
 	echo "NHK8815" > etc/hostname
 	;;
