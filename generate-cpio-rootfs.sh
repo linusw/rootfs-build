@@ -164,6 +164,7 @@ case $1 in
 	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.8-2013.10_linux
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
+	BUILD_ALSA=1
 	cp etc/inittab-ux500 etc/inittab
 	echo "Ux500" > etc/hostname
 	;;
@@ -367,42 +368,29 @@ echo "file /usr/bin/fbtest ${STAGEDIR}/usr/bin/fbtest 755 0 0" >> filelist-final
 
 if test ${BUILD_ALSA} ; then
 
-# Clone the alsa-lib git if we don't have it...
-if [ ! -d alsa-lib ] ; then
-    echo "It appears we're missing a alsa-lib git, cloning it."
-    git clone git://git.alsa-project.org/alsa-lib.git alsa-lib
-    if [ ! -d alsa-lib ] ; then
+# Clone the tinyalsa git if we don't have it...
+if [ ! -d tinyalsa ] ; then
+    echo "It appears we're missing a tinyalsa git, cloning it."
+    git clone https://github.com/tinyalsa/tinyalsa.git tinyalsa
+    if [ ! -d tinyalsa ] ; then
 	echo "Failed. ABORTING."
 	exit 1
     fi
 fi
-echo "Compiling alsa-lib..."
-cd alsa-lib
-touch ltconfig
-libtoolize --force --copy --automake
-aclocal ${ACLOCAL_FLAGS}
-autoheader
-automake --foreign --copy --add-missing
-autoconf
-./configure --host=${CC_PREFIX} || exit 1
+echo "Compiling tinyalsa..."
+cd tinyalsa
 make clean
-make
-make install DESTDIR=${BUILDDIR}
+git checkout Makefile
+# Augment CFLAGS in the Makefile!
+sed -i -e "s/^CFLAGS =.*$/CFLAGS = ${CFLAGS} -c -fPIC -Wall/g" Makefile
+make CROSS_COMPILE=${CC_PREFIX}-
 cd ${CURDIR}
-echo "file /usr/lib/libasound.so.2.0.0 ${BUILDDIR}/usr/lib/libasound.so.2.0.0 755 0 0" >> filelist-final.txt
-echo "slink /usr/lib/libasound.so /usr/lib/libasound.so.2.0.0 755 0 0" >> filelist-final.txt
-echo "slink /usr/lib/libasound.so.2 /usr/lib/libasound.so.2.0.0 755 0 0" >> filelist-final.txt
+echo "file /usr/lib/libtinyalsa.so ${CURDIR}/tinyalsa/libtinyalsa.so 755 0 0" >> filelist-final.txt
+echo "file /usr/bin/tinycap ${CURDIR}/tinyalsa/tinycap 755 0 0" >> filelist-final.txt
+echo "file /usr/bin/tinymix ${CURDIR}/tinyalsa/tinymix 755 0 0" >> filelist-final.txt
+echo "file /usr/bin/tinypcminfo ${CURDIR}/tinyalsa/tinypcminfo 755 0 0" >> filelist-final.txt
+echo "file /usr/bin/tinyplay ${CURDIR}/tinyalsa/tinyplay 755 0 0" >> filelist-final.txt
 
-# Clone the alsa-utils git if we don't have it...
-if [ ! -d alsa-utils ] ; then
-    echo "It appears we're missing a alsa-utils git, cloning it."
-    git clone git://git.alsa-project.org/alsa-utils.git alsa-utils
-    if [ ! -d alsa-utils ] ; then
-	echo "Failed. ABORTING."
-	exit 1
-    fi
-fi
-echo "Compiling alsa-utils..."
 fi
 
 # Extra stuff per platform
