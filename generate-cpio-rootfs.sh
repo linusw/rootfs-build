@@ -150,9 +150,9 @@ case $1 in
     "u300")
 	echo "Building ST-Ericsson U300 root filesystem"
 	export ARCH=arm
-	CC_PREFIX=arm-linux-gnueabi
-	CC_DIR=/var/linus/arm-2010q1
-	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
+	CC_PREFIX=armv5l
+	CC_DIR=/var/linus/cross-compiler-armv5l
+	LIBCBASE=${CC_DIR}
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv5t -mtune=arm9tdmi"
 	cp etc/inittab-u300 etc/inittab
 	echo "U300" > etc/hostname
