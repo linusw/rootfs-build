@@ -139,11 +139,11 @@ case $1 in
     "pb1176")
 	echo "Building ARM RealView PB1176 root filesystem"
 	export ARCH=arm
-	CC_PREFIX=arm-linux-gnueabihf
-	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.8-2013.10_linux
-	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
+	CC_PREFIX=armv6l
+	CC_DIR=/var/linus/cross-compiler-armv6l
+	LIBCBASE=${CC_DIR}
 	# Notice: no thumb VFP hardfloat on Thumb1
-	CFLAGS="-marm -mabi=aapcs-linux -mcpu=arm1176jzf-s"
+	CFLAGS="-marm -mabi=aapcs-linux -mno-thumb -mno-thumb-interwork -mcpu=arm1176jzf-s"
 	cp etc/inittab-realview etc/inittab
 	echo "PB1176" > etc/hostname
 	;;
@@ -253,6 +253,7 @@ mkdir ${STAGEDIR}/usr
 mkdir ${STAGEDIR}/usr/bin
 mkdir ${STAGEDIR}/usr/lib
 mkdir ${STAGEDIR}/usr/sbin
+mkdir ${STAGEDIR}/usr/share
 mkdir ${BUILDDIR}
 
 if test ${BUILD_BUSYBOX} ; then
@@ -390,6 +391,7 @@ echo "file /usr/bin/tinycap ${CURDIR}/tinyalsa/tinycap 755 0 0" >> filelist-fina
 echo "file /usr/bin/tinymix ${CURDIR}/tinyalsa/tinymix 755 0 0" >> filelist-final.txt
 echo "file /usr/bin/tinypcminfo ${CURDIR}/tinyalsa/tinypcminfo 755 0 0" >> filelist-final.txt
 echo "file /usr/bin/tinyplay ${CURDIR}/tinyalsa/tinyplay 755 0 0" >> filelist-final.txt
+echo "file /usr/share/doriano48_low.wav ${CURDIR}/share/doriano48_low.wav 644 0 0" >> filelist-final.txt
 
 fi
 
