@@ -9,6 +9,8 @@ STRACEVER=strace-4.7
 STRACE=${CURDIR}/${STRACEVER}
 BUILD_BUSYBOX=1
 BUILD_ALSA=
+# If present, perf will be built and added to the filesystem
+LINUX_TREE=${HOME}/linux
 
 # Helper function to copy one level of files and then one level
 # of links from a directory to another directory.
@@ -164,7 +166,7 @@ case $1 in
 	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
-	BUILD_ALSA=1
+	# BUILD_ALSA=1
 	cp etc/inittab-ux500 etc/inittab
 	echo "Ux500" > etc/hostname
 	;;
@@ -198,8 +200,18 @@ case $1 in
 	cp etc/inittab-vexpress etc/inittab
 	echo "Vexpress" > etc/hostname
 	;;
+    "aarch64")
+	echo "Building AARCH64 root filesystem"
+	export ARCH=aarch64
+	CC_PREFIX=aarch64-linux-gnu
+	CC_DIR=/var/linus/gcc-linaro-aarch64-linux-gnu-4.9-2014.09_linux
+	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
+	CFLAGS="-march=armv8-a"
+	cp etc/inittab-vexpress etc/inittab
+	echo "AARCH64" > etc/hostname
+	;;
     *)
-	echo "Usage: $0 [i486|i586|h3600|footbridge|integrator|msm8660|nhk8815|pb1176|u300|ux500|exynos|versatile|vexpress]"
+	echo "Usage: $0 [i486|i586|h3600|footbridge|integrator|msm8660|nhk8815|pb1176|u300|ux500|exynos|versatile|vexpress|aarch64]"
 	exit 1
 	;;
 esac
@@ -395,6 +407,22 @@ echo "file /usr/share/doriano48_low.wav ${CURDIR}/share/doriano48_low.wav 644 0 
 
 fi
 
+if [ -d ${LINUX_TREE}/tools/perf ] ; then
+    echo "Building perf..."
+    if [ -d ${BUILDDIR}/perf ] ; then
+	rf -rf ${BUILDDIR}/perf
+    fi
+    mkdir -p ${BUILDDIR}/perf
+    ARCH=${ARCH} CROSS_COMPILE=${CC_PREFIX}- O=${BUILDDIR}/perf/ \
+	NO_NEWT=1 NO_SLANG=1 NO_GTK2=1 NO_LIBPERL=1 NO_LIBPYTHON=1 NO_LIBELF=1 NO_LIBBIONIC=1 \
+	make -C ${LINUX_TREE}/tools/perf
+    if [ ! $? -eq 0 ] ; then
+	echo "Build failed!"
+	exit 1
+    fi
+    echo "file /usr/bin/perf ${BUILDDIR}/perf/perf 755 0 0" >> filelist-final.txt
+fi
+
 # Extra stuff per platform
 case $1 in
     "i486")
@@ -433,6 +461,8 @@ case $1 in
 	;;
     "vexpress")
 	;;
+    "aarch64")
+	;;
     *)
 	echo "Forgot to update special per-platform rules."
 	exit 1
@@ -441,6 +471,10 @@ esac
 
 gen_init_cpio filelist-final.txt > ${HOME}/rootfs.cpio
 #rm filelist-final.txt
+if [ "$1" == "aarch64"  ] ; then
+    gzip ${HOME}/rootfs.cpio
+    mv ${HOME}/rootfs.cpio.gz ${OUTFILE}.gz
+fi
 if [ -f ${HOME}/rootfs.cpio ] ; then
     mv ${HOME}/rootfs.cpio ${OUTFILE}
 fi
