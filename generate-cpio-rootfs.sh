@@ -291,6 +291,8 @@ sed -i -e "s/CONFIG_PREFIX=\".*\"/CONFIG_PREFIX=\"..\/stage\"/g" ${BUILDDIR}/.co
 # Turn off "eject" command, we don't have a CDROM
 sed -i -e "s/CONFIG_EJECT=y/\# CONFIG_EJECT is not set/g" ${BUILDDIR}/.config
 sed -i -e "s/CONFIG_FEATURE_EJECT_SCSI=y/\# CONFIG_FEATURE_EJECT_SCSI is not set/g" ${BUILDDIR}/.config
+# We need taskset thoug for SMP tests
+sed -i -e "s/\# CONFIG_TASKSET is not set/CONFIG_TASKSET=y/g" ${BUILDDIR}/.config
 #make O=${BUILDDIR} menuconfig
 make O=${BUILDDIR}
 make O=${BUILDDIR} install
@@ -415,6 +417,7 @@ if [ -d ${LINUX_TREE}/tools/perf ] ; then
     mkdir -p ${BUILDDIR}/perf
     ARCH=${ARCH} CROSS_COMPILE=${CC_PREFIX}- O=${BUILDDIR}/perf/ \
 	NO_NEWT=1 NO_SLANG=1 NO_GTK2=1 NO_LIBPERL=1 NO_LIBPYTHON=1 NO_LIBELF=1 NO_LIBBIONIC=1 \
+	LDFLAGS=-static \
 	make -C ${LINUX_TREE}/tools/perf
     if [ ! $? -eq 0 ] ; then
 	echo "Build failed!"
