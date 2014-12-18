@@ -9,6 +9,7 @@ STRACEVER=strace-4.7
 STRACE=${CURDIR}/${STRACEVER}
 BUILD_BUSYBOX=1
 BUILD_ALSA=
+BUILD_PERF=
 # If present, perf will be built and added to the filesystem
 LINUX_TREE=${HOME}/linux
 
@@ -407,7 +408,10 @@ echo "file /usr/bin/tinypcminfo ${CURDIR}/tinyalsa/tinypcminfo 755 0 0" >> filel
 echo "file /usr/bin/tinyplay ${CURDIR}/tinyalsa/tinyplay 755 0 0" >> filelist-final.txt
 echo "file /usr/share/doriano48_low.wav ${CURDIR}/share/doriano48_low.wav 644 0 0" >> filelist-final.txt
 
+#end of ALSA build
 fi
+
+if test ${BUILD_PERF} ; then
 
 if [ -d ${LINUX_TREE}/tools/perf ] ; then
     echo "Building perf..."
@@ -424,6 +428,9 @@ if [ -d ${LINUX_TREE}/tools/perf ] ; then
 	exit 1
     fi
     echo "file /usr/bin/perf ${BUILDDIR}/perf/perf 755 0 0" >> filelist-final.txt
+fi
+
+# end of perf build
 fi
 
 # Extra stuff per platform
