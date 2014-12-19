@@ -1,6 +1,10 @@
 #!/bin/sh
 
-LEDS=`find /sys/class/leds/ -type l`
+LEDSDIR=/sys/class/leds
+if test ! -d ${LEDSDIR} ; then
+    exit 0
+fi
+LEDS=`find ${LEDSDIR} -type l`
 for led in ${LEDS}
 do
     if [ -f $led/trigger ] ; then
