@@ -8,8 +8,11 @@ BUILDDIR=${CURDIR}/build
 STRACEVER=strace-4.7
 STRACE=${CURDIR}/${STRACEVER}
 BUILD_BUSYBOX=1
+BUILD_LINUX_HEADERS=
 BUILD_ALSA=
 BUILD_PERF=
+BUILD_SELFTEST=
+BUILD_IIOTOOLS=
 # If present, perf will be built and added to the filesystem
 LINUX_TREE=${HOME}/linux
 
@@ -157,6 +160,7 @@ case $1 in
 	CC_DIR=/var/linus/cross-compiler-armv5l
 	LIBCBASE=${CC_DIR}
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv5t -mtune=arm9tdmi"
+	BUILD_SELFTEST=1
 	cp etc/inittab-u300 etc/inittab
 	echo "U300" > etc/hostname
 	;;
@@ -168,6 +172,7 @@ case $1 in
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
 	# BUILD_ALSA=1
+	BUILD_IIOTOOLS=1
 	cp etc/inittab-ux500 etc/inittab
 	echo "Ux500" > etc/hostname
 	;;
@@ -378,6 +383,30 @@ for file in ${LINKSUSRSBIN} ; do
     echo "slink /sbin/${BASE} ${TARGET} 755 0 0" >> filelist-final.txt
 done;
 
+# Trigger all header builds like this
+if test ${BUILD_IIOTOOLS} ; then
+    BUILD_LINUX_HEADERS=1
+fi
+
+if test ${BUILD_LINUX_HEADERS} ; then
+
+if [ -d ${LINUX_TREE} ] ; then
+    echo "Building linux headers..."
+    if [ -d ${BUILDDIR}/include-linux ] ; then
+	rf -rf ${BUILDDIR}/include-linux
+    fi
+    mkdir -p ${BUILDDIR}/include-linux
+    make -C ${LINUX_TREE} headers_install ARCH=${ARCH} INSTALL_HDR_PATH=${BUILDDIR}/include-linux
+    if [ ! $? -eq 0 ] ; then
+	echo "Build failed!"
+	exit 1
+    fi
+fi
+
+# end of building Linux headers
+
+fi
+
 echo "Compiling fbtest..."
 ${CC_PREFIX}-gcc ${CFLAGS} -o ${STAGEDIR}/usr/bin/fbtest fbtest/fbtest.c
 echo "file /usr/bin/fbtest ${STAGEDIR}/usr/bin/fbtest 755 0 0" >> filelist-final.txt
@@ -431,6 +460,58 @@ if [ -d ${LINUX_TREE}/tools/perf ] ; then
 fi
 
 # end of perf build
+fi
+
+if test ${BUILD_IIOTOOLS} ; then
+
+IIOTOOLS_DIR=${LINUX_TREE}/tools/iio
+
+if [ -d ${IIOTOOLS_DIR} ] ; then
+    echo "Building IIO tools..."
+    if [ -d ${BUILDDIR}/iiotools ] ; then
+	rf -rf ${BUILDDIR}/iiotools
+    fi
+    mkdir -p ${BUILDDIR}/iiotools
+    ARCH=${ARCH} \
+	CROSS_COMPILE=${CC_PREFIX}- \
+	O=${BUILDDIR}/iiotools \
+	CFLAGS="${CFLAGS} -I${BUILDDIR}/include-linux/include" \
+	LDFLAGS=-static \
+	make -C ${IIOTOOLS_DIR} all
+    if [ ! $? -eq 0 ] ; then
+	echo "Build failed!"
+	exit 1
+    fi
+    echo "file /usr/bin/lsiio ${IIOTOOLS_DIR}/lsiio 755 0 0" >> filelist-final.txt
+    echo "file /usr/bin/generic_buffer ${IIOTOOOLS_DIR}/generic_buffer 755 0 0" >> filelist-final.txt
+    echo "file /usr/bin/iio_event_monitor ${IIOTOOLS_DIR}/iio_event_monitor 755 0 0" >> filelist-final.txt
+fi
+
+# end of IIO tools build
+fi
+
+if test ${BUILD_SELFTEST} ; then
+
+SELFTEST_DIR=${LINUX_TREE}/tools/testing/selftests
+
+if [ -d ${SELFTEST_DIR} ] ; then
+    echo "Building selftests..."
+    if [ -d ${BUILDDIR}/selftest ] ; then
+	rf -rf ${BUILDDIR}/selftest
+    fi
+    mkdir -p ${BUILDDIR}/selftest
+    ARCH=${ARCH} CROSS_COMPILE=${CC_PREFIX}- O=${BUILDDIR}/selftest/ \
+	LDFLAGS=-static \
+	CFLAGS="${CFLAGS} -I${BUILD_DIR}/include-linux" \
+	make -C ${SELFTEST_DIR} all
+    if [ ! $? -eq 0 ] ; then
+	echo "Build failed!"
+	exit 1
+    fi
+    # echo "file /usr/bin/perf ${BUILDDIR}/perf/perf 755 0 0" >> filelist-final.txt
+fi
+
+# end of selftest build
 fi
 
 # Extra stuff per platform
