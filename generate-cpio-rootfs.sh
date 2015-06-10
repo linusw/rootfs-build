@@ -169,10 +169,11 @@ case $1 in
 	export ARCH=arm
 	CC_PREFIX=arm-linux-gnueabihf
 	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux
+	#CC_DIR=/var/linus/gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
 	# BUILD_ALSA=1
-	BUILD_IIOTOOLS=1
+	# BUILD_IIOTOOLS=1
 	cp etc/inittab-ux500 etc/inittab
 	echo "Ux500" > etc/hostname
 	;;
@@ -210,7 +211,7 @@ case $1 in
 	echo "Building AARCH64 root filesystem"
 	export ARCH=aarch64
 	CC_PREFIX=aarch64-linux-gnu
-	CC_DIR=/var/linus/gcc-linaro-aarch64-linux-gnu-4.9-2014.09_linux
+	CC_DIR=/var/linus/gcc-linaro-4.9-2015.02-3-x86_64_aarch64-linux-gnu
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-march=armv8-a"
 	cp etc/inittab-vexpress etc/inittab
@@ -561,11 +562,10 @@ esac
 
 gen_init_cpio filelist-final.txt > ${HOME}/rootfs.cpio
 #rm filelist-final.txt
-if [ "$1" == "aarch64"  ] ; then
+if [ "$1" == "aarch64" ] ; then
     gzip ${HOME}/rootfs.cpio
     mv ${HOME}/rootfs.cpio.gz ${OUTFILE}.gz
-fi
-if [ -f ${HOME}/rootfs.cpio ] ; then
+elif [ -f ${HOME}/rootfs.cpio ] ; then
     mv ${HOME}/rootfs.cpio ${OUTFILE}
 fi
 echo "New rootfs ready in ${OUTFILE}"
