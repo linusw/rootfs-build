@@ -1,0 +1,8 @@
+build
+busybox
+etc/hostname
+etc/inittab
+filelist-final.txt
+stage
+tinyalsa
+trinity
