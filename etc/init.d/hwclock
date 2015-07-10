@@ -38,7 +38,7 @@ fi
 
 if [ -f /sys/class/rtc/rtc0/name ]; then
     RTC0_NAME=`cat /sys/class/rtc/rtc0/name`
-    if [ "$RTC0_NAME" = "ab3100-rtc" -o "$RTC0_NAME" = "ab8500-rtc" ]; then
+    if [ "$RTC0_NAME" = "ab3100-rtc" -o "$RTC0_NAME" = "ab8500-rtc" -o "$RTC0_NAME = "ds1337" ]; then
 	BACKED_CLOCK="rtc0"
 	SECONDARY_CLOCK=
     fi
@@ -46,12 +46,17 @@ fi
 
 if [ -f /sys/class/rtc/rtc1/name ]; then
     RTC1_NAME=`cat /sys/class/rtc/rtc1/name`
-    if [ "$RTC1_NAME" = "ab3100-rtc" -o "$RTC0_NAME" = "ab8500-rtc" ]; then
+    if [ "$RTC1_NAME" = "ab3100-rtc" -o "$RTC0_NAME" = "ab8500-rtc" -o "$RTC1_NAME = "ds1337" ]; then
 	BACKED_CLOCK="rtc1"
 	SECONDARY_CLOCK="rtc0"
     else
 	SECONDARY_CLOCK="rtc1"
     fi
+fi
+
+if [ -z "${BACKED_CLOCK}" ]; then
+    # We don't know the status of these clocks
+    exit 0
 fi
 
 if [ ! -c /dev/${BACKED_CLOCK} ]; then

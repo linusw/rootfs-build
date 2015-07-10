@@ -1,0 +1,8 @@
+#!/bin/sh
+
+TRIGGER=/sys/class/leds/platform\:rdled/trigger
+
+if test ! -w ${TRIGGER} ; then
+    exit 0
+fi
+echo "heartbeat" > ${TRIGGER}

@@ -558,6 +558,8 @@ case $1 in
     "exynos")
 	;;
     "simone")
+	echo "file /etc/init.d/simone-ledheart etc/init.d/simone-ledheart 755 0 0" >> filelist-final.txt
+	echo "slink /etc/rc.d/S10_simone-ledheart /etc/init.d/simone-ledheart 755 0 0" >> filelist-final.txt
 	# Splash image for VGA console
 	echo "file /etc/splash.ppm etc/splash-640x480-rgba5551.ppm 644 0 0" >> filelist-final.txt
 	;;
