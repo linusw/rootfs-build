@@ -168,8 +168,8 @@ case $1 in
 	echo "Building ST-Ericsson Ux500 root filesystem"
 	export ARCH=arm
 	CC_PREFIX=arm-linux-gnueabihf
-	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux
-	#CC_DIR=/var/linus/gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf
+	# CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux
+	CC_DIR=/var/linus/gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
 	# BUILD_ALSA=1
@@ -186,6 +186,17 @@ case $1 in
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a15"
 	cp etc/inittab-exynos etc/inittab
 	echo "Exynos" > etc/hostname
+	;;
+    "simone")
+	echo "Building SIM.ONE ARMv4 root filesystem"
+	export ARCH=arm
+	# Code Sourcery
+	CC_PREFIX=arm-none-linux-gnueabi
+	CC_DIR=/var/linus/arm-2010q1
+	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc/armv4t
+	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv4t"
+	cp etc/inittab-simone etc/inittab
+	echo "SIM.ONE" > etc/hostname
 	;;
     "versatile")
 	echo "Building ARM Versatile root filesystem"
@@ -545,6 +556,10 @@ case $1 in
     "ux500")
 	;;
     "exynos")
+	;;
+    "simone")
+	# Splash image for VGA console
+	echo "file /etc/splash.ppm etc/splash-640x480-rgba5551.ppm 644 0 0" >> filelist-final.txt
 	;;
     "versatile")
 	# Splash image for VGA console
