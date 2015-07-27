@@ -168,8 +168,8 @@ case $1 in
 	echo "Building ST-Ericsson Ux500 root filesystem"
 	export ARCH=arm
 	CC_PREFIX=arm-linux-gnueabihf
-	# CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux
-	CC_DIR=/var/linus/gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf
+	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux
+	# CC_DIR=/var/linus/gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
 	# BUILD_ALSA=1
@@ -196,7 +196,7 @@ case $1 in
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc/armv4t
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv4t"
 	cp etc/inittab-simone etc/inittab
-	echo "SIM.ONE" > etc/hostname
+	echo "SIMONE" > etc/hostname
 	;;
     "versatile")
 	echo "Building ARM Versatile root filesystem"
@@ -276,6 +276,7 @@ if [ -d ${BUILDDIR} ] ; then
     rm -rf ${BUILDDIR}
 fi
 mkdir ${STAGEDIR}
+mkdir ${STAGEDIR}/etc
 mkdir ${STAGEDIR}/bin
 mkdir ${STAGEDIR}/lib
 mkdir ${STAGEDIR}/sbin
@@ -541,7 +542,9 @@ case $1 in
 	;;
     "integrator")
 	# Splash image for VGA console
-	echo "file /etc/splash.ppm etc/splash-640x480-rgba5551.ppm 644 0 0" >> filelist-final.txt
+	echo "640x480-60-rgba5551" > ${STAGEDIR}/etc/vgamode
+	echo "file /etc/vgamode ${STAGEDIR}/etc/vgamode 644 0 0" >> filelist-final.txt
+	echo "file /etc/splash.ppm etc/splash-640x480.ppm 644 0 0" >> filelist-final.txt
 	;;
     "msm8660")
 	;;
@@ -561,11 +564,15 @@ case $1 in
 	echo "file /etc/init.d/simone-ledheart etc/init.d/simone-ledheart 755 0 0" >> filelist-final.txt
 	echo "slink /etc/rc.d/S10_simone-ledheart /etc/init.d/simone-ledheart 755 0 0" >> filelist-final.txt
 	# Splash image for VGA console
-	echo "file /etc/splash.ppm etc/splash-640x480-rgba5551.ppm 644 0 0" >> filelist-final.txt
+	echo "640x480-60-rgb565" > ${STAGEDIR}/etc/vgamode
+	echo "file /etc/vgamode ${STAGEDIR}/etc/vgamode 644 0 0" >> filelist-final.txt
+	echo "file /etc/splash.ppm etc/splash-640x480.ppm 644 0 0" >> filelist-final.txt
 	;;
     "versatile")
 	# Splash image for VGA console
-	echo "file /etc/splash.ppm etc/splash-640x480-rgba5551.ppm 644 0 0" >> filelist-final.txt
+	echo "640x480-60-rgba5551" > ${STAGEDIR}/etc/vgamode
+	echo "file /etc/vgamode ${STAGEDIR}/etc/vgamode 644 0 0" >> filelist-final.txt
+	echo "file /etc/splash.ppm etc/splash-640x480.ppm 644 0 0" >> filelist-final.txt
 	;;
     "vexpress")
 	;;

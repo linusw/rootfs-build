@@ -4,10 +4,14 @@
 
 [ -f /etc/splash.ppm ] || exit 0
 
+[ -f /etc/vgamode ] || exit 0
+
+VGAMODE=`cat /etc/vgamode`
+
 case "$1" in
      start)
 	# Show splash screen
-	fbset 640x480-60-rgba5551
+	fbset ${VGAMODE}
 	fbsplash -s /etc/splash.ppm
 	;;
      stop)
