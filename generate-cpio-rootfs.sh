@@ -13,6 +13,7 @@ BUILD_ALSA=
 BUILD_PERF=
 BUILD_SELFTEST=
 BUILD_IIOTOOLS=
+BUILD_LIBIIO=
 # If present, perf will be built and added to the filesystem
 LINUX_TREE=${HOME}/linux
 
@@ -173,7 +174,8 @@ case $1 in
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
 	# BUILD_ALSA=1
-	# BUILD_IIOTOOLS=1
+	BUILD_IIOTOOLS=1
+	# BUILD_LIBIIO=
 	cp etc/inittab-ux500 etc/inittab
 	echo "Ux500" > etc/hostname
 	;;
@@ -400,6 +402,9 @@ done;
 if test ${BUILD_IIOTOOLS} ; then
     BUILD_LINUX_HEADERS=1
 fi
+if test ${BUILD_LIBIIO} ; then
+    BUILD_LINUX_HEADERS=1
+fi
 
 if test ${BUILD_LINUX_HEADERS} ; then
 
@@ -500,6 +505,35 @@ if [ -d ${IIOTOOLS_DIR} ] ; then
 fi
 
 # end of IIO tools build
+fi
+
+if test ${BUILD_LIBIIO} ; then
+
+if [ ! -d libiio ] ; then
+    echo "It appears we're missing a libiio git, cloning it."
+    git clone https://github.com/analogdevicesinc/libiio.git
+    if [ ! -d libiio ] ; then
+	echo "Failed. ABORTING."
+	exit 1
+    fi
+fi
+
+echo "Building libiio..."
+cd libiio
+cmake ./
+ARCH=${ARCH} \
+    CROSS_=${CC_PREFIX}- \
+    O=${BUILDDIR}/iiotools \
+    CFLAGS="${CFLAGS} -I${BUILDDIR}/include-linux/include" \
+    make -C ${IIOTOOLS_DIR} all
+if [ ! $? -eq 0 ] ; then
+    echo "Build failed!"
+    exit 1
+fi
+#echo "file /usr/bin/lsiio ${IIOTOOLS_DIR}/lsiio 755 0 0" >> filelist-final.txt
+#echo "file /usr/bin/generic_buffer ${IIOTOOLS_DIR}/generic_buffer 755 0 0" >> filelist-final.txt
+#echo "file /usr/bin/iio_event_monitor ${IIOTOOLS_DIR}/iio_event_monitor 755 0 0" >> filelist-final.txt
+# end of libiio build
 fi
 
 if test ${BUILD_SELFTEST} ; then
