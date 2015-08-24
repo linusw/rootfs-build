@@ -14,6 +14,7 @@ BUILD_PERF=
 BUILD_SELFTEST=
 BUILD_IIOTOOLS=
 BUILD_LIBIIO=
+BUILD_TRINITY=
 # If present, perf will be built and added to the filesystem
 LINUX_TREE=${HOME}/linux
 
@@ -405,6 +406,9 @@ fi
 if test ${BUILD_LIBIIO} ; then
     BUILD_LINUX_HEADERS=1
 fi
+if test ${BUILD_TRINITY} ; then
+    BUILD_LINUX_HEADERS=1
+fi
 
 if test ${BUILD_LINUX_HEADERS} ; then
 
@@ -420,6 +424,10 @@ if [ -d ${LINUX_TREE} ] ; then
 	exit 1
     fi
 fi
+
+# Now use these includes in subsequent builds
+CFLAGS="${CFLAGS} -I${BUILDDIR}/include-linux/include"
+echo "New CFLAGS: ${CFLAGS}"
 
 # end of building Linux headers
 
@@ -494,7 +502,7 @@ if [ -d ${IIOTOOLS_DIR} ] ; then
 	CROSS_COMPILE=${CC_PREFIX}- \
 	O=${BUILDDIR}/iiotools \
 	CFLAGS="${CFLAGS} -I${BUILDDIR}/include-linux/include" \
-	make -C ${IIOTOOLS_DIR} all
+	make -C ${IIOTOOLS_DIR}
     if [ ! $? -eq 0 ] ; then
 	echo "Build failed!"
 	exit 1
@@ -534,6 +542,33 @@ fi
 #echo "file /usr/bin/generic_buffer ${IIOTOOLS_DIR}/generic_buffer 755 0 0" >> filelist-final.txt
 #echo "file /usr/bin/iio_event_monitor ${IIOTOOLS_DIR}/iio_event_monitor 755 0 0" >> filelist-final.txt
 # end of libiio build
+fi
+
+if test ${BUILD_TRINITY} ; then
+
+if [ ! -d trinity ] ; then
+    echo "It appears we're missing a trinity git, cloning it."
+    git clone https://github.com/kernelslacker/trinity.git
+    if [ ! -d trinity ] ; then
+	echo "Failed. ABORTING."
+	exit 1
+    fi
+fi
+
+echo "Building trinity..."
+cd trinity
+CC=gcc CROSS_COMPILE=${CC_PREFIX}- CFLAGS="$CFLAGS" ./configure.sh
+make clean
+echo "Cleaned up"
+echo "Compiler: ${CC_PREFIX}-gcc ${CFLAGS}"
+CC=gcc CROSS_COMPILE=${CC_PREFIX}- CROSS_CFLAGS="${CFLAGS}" make all
+if [ ! $? -eq 0 ] ; then
+    echo "Trinity build failed!"
+    exit 1
+fi
+cd ${CURDIR}
+echo "file /usr/bin/trinity ${CURDIR}/trinity/trinity 755 0 0" >> filelist-final.txt
+# end of trinity build
 fi
 
 if test ${BUILD_SELFTEST} ; then
