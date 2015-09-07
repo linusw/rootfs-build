@@ -15,6 +15,8 @@ BUILD_SELFTEST=
 BUILD_IIOTOOLS=
 BUILD_LIBIIO=
 BUILD_TRINITY=
+BUILD_LTP=
+BUILD_CRASHME=
 # If present, perf will be built and added to the filesystem
 LINUX_TREE=${HOME}/linux
 
@@ -72,6 +74,7 @@ case $1 in
 	CC_DIR=/var/linus/cross-compiler-armv4l
 	LIBCBASE=${CC_DIR}
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork -mcpu=strongarm1100"
+	BUILD_CRASHME=1
 	cp etc/inittab-sa1100 etc/inittab
 	echo "h3600" > etc/hostname
 	;;
@@ -120,6 +123,7 @@ case $1 in
 	CC_DIR=/var/linus/arm-2010q1
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc/armv4t
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv4t -mtune=arm9tdmi"
+	BUILD_TRINITY=1
 
 	cp etc/inittab-integrator etc/inittab
 	echo "integrator" > etc/hostname
@@ -175,8 +179,11 @@ case $1 in
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
 	# BUILD_ALSA=1
-	BUILD_IIOTOOLS=1
+	# BUILD_IIOTOOLS=1
 	# BUILD_LIBIIO=
+	# BUILD_TRINITY=1
+	# BUILD_LTP=1
+	BUILD_CRASHME=1
 	cp etc/inittab-ux500 etc/inittab
 	echo "Ux500" > etc/hostname
 	;;
@@ -193,11 +200,11 @@ case $1 in
     "simone")
 	echo "Building SIM.ONE ARMv4 root filesystem"
 	export ARCH=arm
-	# Code Sourcery
-	CC_PREFIX=arm-none-linux-gnueabi
-	CC_DIR=/var/linus/arm-2010q1
-	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc/armv4t
-	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv4t"
+	# Rob's cross compiler
+	CC_PREFIX=armv4tl
+	CC_DIR=/var/linus/cross-compiler-armv4tl
+	LIBCBASE=${CC_DIR}
+	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -march=armv4t"
 	cp etc/inittab-simone etc/inittab
 	echo "SIMONE" > etc/hostname
 	;;
@@ -237,6 +244,13 @@ case $1 in
 	;;
 esac
 
+if test "${CC_PREFIX}" = "armv4tl" ; then
+    CROSS_HOST="arm-linux-gnu"
+else
+    CROSS_HOST=${CC_PREFIX}
+fi
+echo "CROSS_HOST = ${CROSS_HOST}"
+
 # Define more tools
 STRIP=${CC_PREFIX}-strip
 OUTFILE=${HOME}/rootfs-$1.cpio
@@ -245,7 +259,7 @@ echo "OUTFILE = ${OUTFILE}"
 
 echo "Check prerequisites..."
 echo "Set up cross compiler at: ${CC_DIR}"
-export PATH="$PATH:${CC_DIR}/bin"
+export PATH="${CC_DIR}/bin:${PATH}"
 echo -n "Check crosscompiler ... "
 which ${CC_PREFIX}-gcc > /dev/null ; if [ ! $? -eq 0 ] ; then
     echo "ERROR: cross-compiler ${CC_PREFIX}-gcc not in PATH=$PATH!"
@@ -409,6 +423,12 @@ fi
 if test ${BUILD_TRINITY} ; then
     BUILD_LINUX_HEADERS=1
 fi
+if test ${BUILD_LTP} ; then
+    BUILD_LINUX_HEADERS=1
+fi
+if test ${BUILD_CRASHME} ; then
+    BUILD_LINUX_HEADERS=1
+fi
 
 if test ${BUILD_LINUX_HEADERS} ; then
 
@@ -529,11 +549,11 @@ fi
 echo "Building libiio..."
 cd libiio
 cmake ./
-ARCH=${ARCH} \
+echo "ARCH=${ARCH} \
     CROSS_=${CC_PREFIX}- \
     O=${BUILDDIR}/iiotools \
     CFLAGS="${CFLAGS} -I${BUILDDIR}/include-linux/include" \
-    make -C ${IIOTOOLS_DIR} all
+    make -C ${IIOTOOLS_DIR} all"
 if [ ! $? -eq 0 ] ; then
     echo "Build failed!"
     exit 1
@@ -569,6 +589,52 @@ fi
 cd ${CURDIR}
 echo "file /usr/bin/trinity ${CURDIR}/trinity/trinity 755 0 0" >> filelist-final.txt
 # end of trinity build
+fi
+
+if test ${BUILD_LTP} ; then
+
+if [ ! -d ltp ] ; then
+    echo "It appears we're missing an LTP git, cloning it."
+    git clone https://github.com/linux-test-project/ltp.git
+    if [ ! -d ltp ] ; then
+	echo "Failed. ABORTING."
+	exit 1
+    fi
+fi
+
+echo "Building LTP..."
+cd ltp
+make autotools
+mkdir -p ${BUILDDIR}/ltp
+cd ${BUILDDIR}/ltp
+${CURDIR}/ltp/configure CC=${CC_PREFIX}-gcc CFLAGS="$CFLAGS" --build x86_64 --host=${CROSS_HOST}
+cd ${CURDIR}/ltp
+#cp include/config.h.default ${BUILDDIR}/ltp/include/config.h
+#cp include/mk/config.mk.default ${BUILDDIR}/ltp/include/mk/config.mk
+#cp include/mk/features.mk.default ${BUILDDIR}/ltp/include/mk/features.mk
+make \
+    -C ${BUILDDIR}/ltp \
+    -f ${CURDIR}/ltp/Makefile \
+    top_srcdir=${CURDIR}/ltp \
+    top_builddir=${BUILDDIR}/ltp
+if [ ! $? -eq 0 ] ; then
+    echo "LTP build failed!"
+    exit 1
+fi
+cd ${CURDIR}
+echo "file /usr/bin/hackbench ${BUILDDIR}/ltp/testcases/kernel/sched/cfs-scheduler/hackbench 755 0 0" >> filelist-final.txt
+echo "file /usr/bin/process ${BUILDDIR}/ltp/testcases/kernel/sched/process_stress/process 755 0 0" >> filelist-final.txt
+# end of LTP build
+fi
+
+if test ${BUILD_CRASHME} ; then
+echo "Building Crashme..."
+cd crashme-2.8.5
+make clean
+make CC=${CC_PREFIX}-gcc CFLAGS="${CFLAGS}"
+cd ${CURDIR}
+echo "file /usr/bin/crashme ${CURDIR}/crashme-2.8.5/crashme 755 0 0" >> filelist-final.txt
+# end of Crashme build
 fi
 
 if test ${BUILD_SELFTEST} ; then
