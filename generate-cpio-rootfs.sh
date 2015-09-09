@@ -9,6 +9,7 @@ STRACEVER=strace-4.7
 STRACE=${CURDIR}/${STRACEVER}
 BUILD_BUSYBOX=1
 BUILD_LINUX_HEADERS=
+BUILD_FBTEST=
 BUILD_ALSA=
 BUILD_PERF=
 BUILD_SELFTEST=
@@ -17,6 +18,7 @@ BUILD_LIBIIO=
 BUILD_TRINITY=
 BUILD_LTP=
 BUILD_CRASHME=
+BUILD_IOZONE=
 # If present, perf will be built and added to the filesystem
 LINUX_TREE=${HOME}/linux
 
@@ -107,10 +109,11 @@ case $1 in
 	export ARCH=arm
 
 	# Use ARMv4T base for Integrator rootfs builds
-	#CC_PREFIX=armv4tl
-	#CC_DIR=/var/linus/cross-compiler-armv4tl
-	#LIBCBASE=${CC_DIR}
-	#CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv4t -mtune=arm9tdmi"
+	CC_PREFIX=armv4tl
+	CC_DIR=/var/linus/cross-compiler-armv4tl
+	LIBCBASE=${CC_DIR}
+	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv4t -mtune=arm9tdmi"
+	BUILD_CRASHME=1
 
 	# Works but no framebuffer... (error on mmap)
 	#CC_PREFIX=armv4l
@@ -119,11 +122,11 @@ case $1 in
 	#CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork -mcpu=arm920t"
 
 	# Code Sourcery
-	CC_PREFIX=arm-none-linux-gnueabi
-	CC_DIR=/var/linus/arm-2010q1
-	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc/armv4t
-	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv4t -mtune=arm9tdmi"
-	BUILD_TRINITY=1
+	#CC_PREFIX=arm-none-linux-gnueabi
+	#CC_DIR=/var/linus/arm-2010q1
+	#LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc/armv4t
+	#CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv4t -mtune=arm9tdmi"
+	#BUILD_TRINITY=1
 
 	cp etc/inittab-integrator etc/inittab
 	echo "integrator" > etc/hostname
@@ -232,11 +235,16 @@ case $1 in
 	echo "Building AARCH64 root filesystem"
 	export ARCH=aarch64
 	CC_PREFIX=aarch64-linux-gnu
-	CC_DIR=/var/linus/gcc-linaro-4.9-2015.02-3-x86_64_aarch64-linux-gnu
+	CC_DIR=/var/linus/gcc-linaro-aarch64-linux-gnu-4.9-2014.09_linux
+	#CC_DIR=/var/linus/gcc-linaro-4.9-2015.02-3-x86_64_aarch64-linux-gnu
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-march=armv8-a"
 	cp etc/inittab-vexpress etc/inittab
 	echo "AARCH64" > etc/hostname
+	BUILD_CRASHME=1
+	BUILD_LTP=1
+	BUILD_TRINITY=1
+	BUILD_IOZONE=1
 	;;
     *)
 	echo "Usage: $0 [i486|i586|h3600|footbridge|integrator|msm8660|nhk8815|pb1176|u300|ux500|exynos|versatile|vexpress|aarch64]"
@@ -414,6 +422,9 @@ for file in ${LINKSUSRSBIN} ; do
 done;
 
 # Trigger all header builds like this
+if test ${BUILD_FBTEST} ; then
+    BUILD_LINUX_HEADERS=1
+fi
 if test ${BUILD_IIOTOOLS} ; then
     BUILD_LINUX_HEADERS=1
 fi
@@ -429,6 +440,9 @@ fi
 if test ${BUILD_CRASHME} ; then
     BUILD_LINUX_HEADERS=1
 fi
+if test ${BUILD_IOZONE} ; then
+    BUILD_LINUX_HEADERS=1
+fi
 
 if test ${BUILD_LINUX_HEADERS} ; then
 
@@ -438,7 +452,12 @@ if [ -d ${LINUX_TREE} ] ; then
 	rf -rf ${BUILDDIR}/include-linux
     fi
     mkdir -p ${BUILDDIR}/include-linux
-    make -C ${LINUX_TREE} headers_install ARCH=${ARCH} INSTALL_HDR_PATH=${BUILDDIR}/include-linux
+    if test ${ARCH} = aarch64 ; then
+	LINUXARCH=arm64
+    else
+	LINUXARCH=${ARCH}
+    fi
+    make -C ${LINUX_TREE} headers_install ARCH=${LINUXARCH} INSTALL_HDR_PATH=${BUILDDIR}/include-linux
     if [ ! $? -eq 0 ] ; then
 	echo "Build failed!"
 	exit 1
@@ -453,9 +472,14 @@ echo "New CFLAGS: ${CFLAGS}"
 
 fi
 
+if test ${BUILD_FBTEST} ; then
+
 echo "Compiling fbtest..."
 ${CC_PREFIX}-gcc ${CFLAGS} -o ${STAGEDIR}/usr/bin/fbtest fbtest/fbtest.c
 echo "file /usr/bin/fbtest ${STAGEDIR}/usr/bin/fbtest 755 0 0" >> filelist-final.txt
+
+# End of building fbtest
+fi
 
 if test ${BUILD_ALSA} ; then
 
@@ -637,6 +661,28 @@ echo "file /usr/bin/crashme ${CURDIR}/crashme-2.8.5/crashme 755 0 0" >> filelist
 # end of Crashme build
 fi
 
+if test ${BUILD_IOZONE} ; then
+
+echo "Building iozone..."
+IOZONE_DIR=${CURDIR}/iozone3_430/src/current
+
+if [ ! -d ${IOZONE_DIR} ] ; then
+    echo "It appears we're missing the iozone dir, fix it."
+    exit 1
+fi
+
+cd ${IOZONE_DIR}
+CC=${CC_PREFIX}-gcc GCC=${CC_PREFIX}-gcc CFLAGS="${CFLAGS}" LDFLAGS="${CFLAGS}" make -f makefile linux-arm
+if [ ! $? -eq 0 ] ; then
+    echo "Build failed!"
+    exit 1
+fi
+
+cd ${CURDIR}
+echo "file /usr/bin/iozone ${IOZONE_DIR}/iozone 755 0 0" >> filelist-final.txt
+# end of iozone build
+fi
+
 if test ${BUILD_SELFTEST} ; then
 
 SELFTEST_DIR=${LINUX_TREE}/tools/testing/selftests
@@ -722,6 +768,9 @@ esac
 gen_init_cpio filelist-final.txt > ${HOME}/rootfs.cpio
 #rm filelist-final.txt
 if [ "$1" == "aarch64" ] ; then
+    # This one if for attaching to a kernel as initramfs
+    cp ${HOME}/rootfs.cpio ${OUTFILE}
+    # This one is for initramfs yada yada
     gzip ${HOME}/rootfs.cpio
     mv ${HOME}/rootfs.cpio.gz ${OUTFILE}.gz
 elif [ -f ${HOME}/rootfs.cpio ] ; then
