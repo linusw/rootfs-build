@@ -12,7 +12,7 @@ BUILD_LINUX_HEADERS=
 BUILD_FBTEST=
 BUILD_ALSA=
 BUILD_PERF=
-BUILD_SELFTEST=
+BUILD_KSELFTEST=
 BUILD_IIOTOOLS=
 BUILD_LIBIIO=
 BUILD_TRINITY=
@@ -20,29 +20,47 @@ BUILD_LTP=
 BUILD_CRASHME=
 BUILD_IOZONE=
 # If present, perf will be built and added to the filesystem
-LINUX_TREE=${HOME}/linux
+LINUX_TREE=${HOME}/linux-next
 
 # Helper function to copy one level of files and then one level
 # of links from a directory to another directory.
 function clone_dir()
 {
-    SRCDIR=$1
-    DSTDIR=$2
-    FILES=`find ${SRCDIR} -maxdepth 1 -type f`
+    local SRCDIR=$1
+    local DSTDIR=$2
+    local FILES=`find ${SRCDIR} -maxdepth 1 -type f`
     for file in ${FILES} ; do
-	BASE=`basename $file`
+	local BASE=`basename $file`
 	cp $file ${DSTDIR}/${BASE}
 	# ${STRIP} -s ${DSTDIR}/${BASE}
     done;
     # Clone links from the toolchain binary library dir
-    LINKS=`find ${SRCDIR} -maxdepth 1 -type l`
+    local LINKS=`find ${SRCDIR} -maxdepth 1 -type l`
     cd ${DSTDIR}
     for file in ${LINKS} ; do
-	BASE=`basename $file`
-	TARGET=`readlink $file`
+	local BASE=`basename $file`
+	local TARGET=`readlink $file`
 	ln -s ${TARGET} ${BASE}
     done;
     cd ${CURDIR}
+}
+
+function clone_to_cpio()
+{
+    local SRCDIR=$1
+    local TARGETBASE=$2
+    echo "dir ${TARGETBASE} 755 0 0" >> filelist-final.txt
+
+    local FILES=`find ${SRCDIR} -maxdepth 1 -type f`
+    for file in ${FILES} ; do
+	local BASE=`basename $file`
+	echo "file ${TARGETBASE}/${BASE} $file 755 0 0" >> filelist-final.txt
+    done;
+    local DIRS=`find ${SRCDIR} -maxdepth 1 -type d`
+    for dir in ${DIRS} ; do
+	local BASE=`basename $dir`
+	clone_to_cpio ${SRCDIR}/${BASE} ${TARGETBASE}/${BASE}
+    done;
 }
 
 case $1 in
@@ -109,11 +127,10 @@ case $1 in
 	export ARCH=arm
 
 	# Use ARMv4T base for Integrator rootfs builds
-	CC_PREFIX=armv4tl
-	CC_DIR=/var/linus/cross-compiler-armv4tl
-	LIBCBASE=${CC_DIR}
-	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv4t -mtune=arm9tdmi"
-	BUILD_CRASHME=1
+	#CC_PREFIX=armv4tl
+	#CC_DIR=/var/linus/cross-compiler-armv4tl
+	#LIBCBASE=${CC_DIR}
+	#CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv4t -mtune=arm9tdmi"
 
 	# Works but no framebuffer... (error on mmap)
 	#CC_PREFIX=armv4l
@@ -122,12 +139,13 @@ case $1 in
 	#CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork -mcpu=arm920t"
 
 	# Code Sourcery
-	#CC_PREFIX=arm-none-linux-gnueabi
-	#CC_DIR=/var/linus/arm-2010q1
-	#LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc/armv4t
-	#CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv4t -mtune=arm9tdmi"
-	#BUILD_TRINITY=1
-
+	CC_PREFIX=arm-none-linux-gnueabi
+	CC_DIR=/var/linus/arm-2010q1
+	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc/armv4t
+	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv4t -mtune=arm9tdmi"
+	# BUILD_TRINITY=1
+	# BUILD_CRASHME=1
+	BUILD_IOZONE=1
 	cp etc/inittab-integrator etc/inittab
 	echo "integrator" > etc/hostname
 	;;
@@ -169,7 +187,7 @@ case $1 in
 	CC_DIR=/var/linus/cross-compiler-armv5l
 	LIBCBASE=${CC_DIR}
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv5t -mtune=arm9tdmi"
-	BUILD_SELFTEST=1
+	BUILD_KSELFTEST=1
 	cp etc/inittab-u300 etc/inittab
 	echo "U300" > etc/hostname
 	;;
@@ -186,7 +204,10 @@ case $1 in
 	# BUILD_LIBIIO=
 	# BUILD_TRINITY=1
 	# BUILD_LTP=1
-	BUILD_CRASHME=1
+	# BUILD_CRASHME=1
+	# BUILD_IOZONE=1
+	BUILD_BUSYBOX=
+	BUILD_KSELFTEST=1
 	cp etc/inittab-ux500 etc/inittab
 	echo "Ux500" > etc/hostname
 	;;
@@ -220,6 +241,9 @@ case $1 in
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv5t -mtune=arm9tdmi"
 	cp etc/inittab-versatile etc/inittab
 	echo "Versatile" > etc/hostname
+	BUILD_CRASHME=
+	BUILD_LTP=
+	BUILD_KSELFTEST=1
 	;;
     "vexpress")
 	echo "Building Versatile Express root filesystem"
@@ -243,7 +267,6 @@ case $1 in
 	echo "AARCH64" > etc/hostname
 	BUILD_CRASHME=1
 	BUILD_LTP=1
-	BUILD_TRINITY=1
 	BUILD_IOZONE=1
 	;;
     *)
@@ -645,6 +668,13 @@ if [ ! $? -eq 0 ] ; then
     echo "LTP build failed!"
     exit 1
 fi
+make \
+    -C ${BUILDDIR}/ltp \
+    -f ${CURDIR}/ltp/Makefile \
+    top_srcdir=${CURDIR}/ltp \
+    top_builddir=${BUILDDIR}/ltp \
+    DESTDIR=${STAGEDIR} \
+    install
 cd ${CURDIR}
 echo "file /usr/bin/hackbench ${BUILDDIR}/ltp/testcases/kernel/sched/cfs-scheduler/hackbench 755 0 0" >> filelist-final.txt
 echo "file /usr/bin/process ${BUILDDIR}/ltp/testcases/kernel/sched/process_stress/process 755 0 0" >> filelist-final.txt
@@ -672,6 +702,7 @@ if [ ! -d ${IOZONE_DIR} ] ; then
 fi
 
 cd ${IOZONE_DIR}
+rm *.o
 CC=${CC_PREFIX}-gcc GCC=${CC_PREFIX}-gcc CFLAGS="${CFLAGS}" LDFLAGS="${CFLAGS}" make -f makefile linux-arm
 if [ ! $? -eq 0 ] ; then
     echo "Build failed!"
@@ -683,17 +714,17 @@ echo "file /usr/bin/iozone ${IOZONE_DIR}/iozone 755 0 0" >> filelist-final.txt
 # end of iozone build
 fi
 
-if test ${BUILD_SELFTEST} ; then
+if test ${BUILD_KSELFTEST} ; then
 
 SELFTEST_DIR=${LINUX_TREE}/tools/testing/selftests
 
 if [ -d ${SELFTEST_DIR} ] ; then
     echo "Building selftests..."
-    if [ -d ${BUILDDIR}/selftest ] ; then
-	rf -rf ${BUILDDIR}/selftest
+    if [ -d ${BUILDDIR}/kselftest ] ; then
+	rf -rf ${BUILDDIR}/kselftest
     fi
-    mkdir -p ${BUILDDIR}/selftest
-    ARCH=${ARCH} CROSS_COMPILE=${CC_PREFIX}- O=${BUILDDIR}/selftest/ \
+    mkdir -p ${BUILDDIR}/kselftest
+    ARCH=${ARCH} CROSS_COMPILE=${CC_PREFIX}- O=${BUILDDIR}/kselftest/ \
 	LDFLAGS=-static \
 	CFLAGS="${CFLAGS} -I${BUILD_DIR}/include-linux" \
 	make -C ${SELFTEST_DIR} all
@@ -701,7 +732,10 @@ if [ -d ${SELFTEST_DIR} ] ; then
 	echo "Build failed!"
 	exit 1
     fi
-    # echo "file /usr/bin/perf ${BUILDDIR}/perf/perf 755 0 0" >> filelist-final.txt
+    mkdir -p ${STAGEDIR}/kselftest
+    INSTALL_PATH=${STAGEDIR}/opt/kselftest \
+	make -C ${SELFTEST_DIR} install
+    clone_to_cpio ${STAGEDIR}/opt/kselftest /opt/kselftest
 fi
 
 # end of selftest build

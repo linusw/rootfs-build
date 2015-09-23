@@ -63,3 +63,4 @@ dir /var/run 755 0 0
 dir /var/lock 755 0 0
 dir /var/tmp 755 0 0
 dir /lib 755 0 0
+dir /opt 755 0 0
