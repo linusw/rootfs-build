@@ -243,7 +243,7 @@ case $1 in
 	echo "Versatile" > etc/hostname
 	BUILD_CRASHME=
 	BUILD_LTP=
-	BUILD_KSELFTEST=
+	BUILD_KSELFTEST=1
 	;;
     "vexpress")
 	echo "Building Versatile Express root filesystem"
@@ -365,9 +365,10 @@ sed -i -e "s/CONFIG_FEATURE_EJECT_SCSI=y/\# CONFIG_FEATURE_EJECT_SCSI is not set
 sed -i -e "s/\# CONFIG_TASKSET is not set/CONFIG_TASKSET=y/g" ${BUILDDIR}/.config
 
 # LTP needs a proper bash to run
-#if test ${BUILD_KSELFTEST} ; then
-#    sed -i -e "s/\# CONFIG_FEATURE_BASH_IS_ASH is not set/CONFIG_FEATURE_BASH_IS_ASH=y/g" ${BUILDDIR}/.config
-#fi
+if test ${BUILD_KSELFTEST} ; then
+    sed -i -e "s/\# CONFIG_FEATURE_BASH_IS_ASH is not set/CONFIG_FEATURE_BASH_IS_ASH=y/g" ${BUILDDIR}/.config
+    sed -i -e "s/CONFIG_FEATURE_BASH_IS_NONE=y/\# CONFIG_FEATURE_BASH_IS_NONE is not set/g" ${BUILDDIR}/.config
+fi
 
 # Enable for manual config
 #make O=${BUILDDIR} menuconfig
@@ -744,7 +745,11 @@ if [ -d ${SELFTEST_DIR} ] ; then
     fi
     mkdir -p ${STAGEDIR}/kselftest
     INSTALL_PATH=${STAGEDIR}/opt/kselftest \
-	make -C ${SELFTEST_DIR} install
+		make -C ${SELFTEST_DIR} install
+    # We don't need x86 tests
+    if [ -d ${STAGEDIR}/opt/kselftest/x86 ] ; then
+	rm -rf ${STAGEDIR}/opt/kselftest/x86
+    fi
     clone_to_cpio ${STAGEDIR}/opt/kselftest /opt/kselftest
 fi
 
