@@ -350,16 +350,26 @@ fi
 cd busybox
 make O=${BUILDDIR} defconfig
 echo "Configuring cross compiler etc..."
+
 # Comment in this line to create a statically linked busybox
 #sed -i "s/^#.*CONFIG_STATIC.*/CONFIG_STATIC=y/" ${BUILDDIR}/.config
 sed -i -e "s/CONFIG_CROSS_COMPILER_PREFIX=\"\"/CONFIG_CROSS_COMPILER_PREFIX=\"${CC_PREFIX}-\"/g" ${BUILDDIR}/.config
 sed -i -e "s/CONFIG_EXTRA_CFLAGS=\"\"/CONFIG_EXTRA_CFLAGS=\"${CFLAGS}\"/g" ${BUILDDIR}/.config
 sed -i -e "s/CONFIG_PREFIX=\".*\"/CONFIG_PREFIX=\"..\/stage\"/g" ${BUILDDIR}/.config
+
 # Turn off "eject" command, we don't have a CDROM
 sed -i -e "s/CONFIG_EJECT=y/\# CONFIG_EJECT is not set/g" ${BUILDDIR}/.config
 sed -i -e "s/CONFIG_FEATURE_EJECT_SCSI=y/\# CONFIG_FEATURE_EJECT_SCSI is not set/g" ${BUILDDIR}/.config
-# We need taskset thoug for SMP tests
+
+# We need taskset though for SMP tests
 sed -i -e "s/\# CONFIG_TASKSET is not set/CONFIG_TASKSET=y/g" ${BUILDDIR}/.config
+
+# LTP needs a proper bash to run
+if test ${BUILD_KSELFTEST} ; then
+    sed -i -e "s/\# CONFIG_FEATURE_BASH_IS_ASH is not set/CONFIG_FEATURE_BASH_IS_ASH=y/g" ${BUILDDIR}/.config
+fi
+
+# Enable for manual config
 #make O=${BUILDDIR} menuconfig
 make O=${BUILDDIR}
 make O=${BUILDDIR} install
