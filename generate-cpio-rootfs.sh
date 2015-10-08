@@ -19,8 +19,9 @@ BUILD_TRINITY=
 BUILD_LTP=
 BUILD_CRASHME=
 BUILD_IOZONE=
+BUILD_FIO=
 # If present, perf will be built and added to the filesystem
-LINUX_TREE=${HOME}/linux-next
+LINUX_TREE=${HOME}/linux
 
 # Helper function to copy one level of files and then one level
 # of links from a directory to another directory.
@@ -180,6 +181,17 @@ case $1 in
 	cp etc/inittab-realview etc/inittab
 	echo "PB1176" > etc/hostname
 	;;
+    "pb11mp")
+	echo "Building ARM RealView PB11MPCore root filesystem"
+	export ARCH=arm
+	CC_PREFIX=armv6l
+	CC_DIR=/var/linus/cross-compiler-armv6l
+	LIBCBASE=${CC_DIR}
+	# Notice: no thumb VFP hardfloat on Thumb1
+	CFLAGS="-marm -mabi=aapcs-linux -mno-thumb -mno-thumb-interwork -mcpu=mpcore"
+	cp etc/inittab-realview etc/inittab
+	echo "PB11MPCore" > etc/hostname
+	;;
     "u300")
 	echo "Building ST-Ericsson U300 root filesystem"
 	export ARCH=arm
@@ -241,9 +253,11 @@ case $1 in
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv5t -mtune=arm9tdmi"
 	cp etc/inittab-versatile etc/inittab
 	echo "Versatile" > etc/hostname
-	BUILD_CRASHME=
-	BUILD_LTP=
-	BUILD_KSELFTEST=1
+	# BUILD_CRASHME=1
+	# BUILD_LTP=1
+	# BUILD_KSELFTEST=1
+	BUILD_BUSYBOX=
+	BUILD_FIO=1
 	;;
     "vexpress")
 	echo "Building Versatile Express root filesystem"
@@ -477,6 +491,9 @@ fi
 if test ${BUILD_IOZONE} ; then
     BUILD_LINUX_HEADERS=1
 fi
+if test ${BUILD_FIO} ; then
+    BUILD_LINUX_HEADERS=1
+fi
 
 if test ${BUILD_LINUX_HEADERS} ; then
 
@@ -687,8 +704,7 @@ make \
     DESTDIR=${STAGEDIR} \
     install
 cd ${CURDIR}
-echo "file /usr/bin/hackbench ${BUILDDIR}/ltp/testcases/kernel/sched/cfs-scheduler/hackbench 755 0 0" >> filelist-final.txt
-echo "file /usr/bin/process ${BUILDDIR}/ltp/testcases/kernel/sched/process_stress/process 755 0 0" >> filelist-final.txt
+clone_to_cpio ${STAGEDIR}/opt/ltp /opt/ltp
 # end of LTP build
 fi
 
@@ -700,6 +716,38 @@ make CC=${CC_PREFIX}-gcc CFLAGS="${CFLAGS}"
 cd ${CURDIR}
 echo "file /usr/bin/crashme ${CURDIR}/crashme-2.8.5/crashme 755 0 0" >> filelist-final.txt
 # end of Crashme build
+fi
+
+if test ${BUILD_FIO} ; then
+
+echo "Building fio..."
+FIO_DIR=${CURDIR}/fio
+
+if [ ! -d ${FIO_DIR} ] ; then
+    echo "It appears we're missing a FIO git, cloning it."
+    cd ${CURDIR}
+    git clone https://github.com/axboe/fio.git
+    if [ ! -d fio ] ; then
+	echo "Failed. ABORTING."
+	exit 1
+    fi
+fi
+
+cd ${FIO_DIR}
+git checkout configure
+rm *.o
+mkdir -p ${STAGEDIR}/fio
+./configure --prefix=${STAGEDIR}/fio --cc=${CC_PREFIX}-gcc --extra-cflags="${CFLAGS}"
+make
+if [ ! $? -eq 0 ] ; then
+    echo "Build failed!"
+    exit 1
+fi
+make install
+
+cd ${CURDIR}
+echo "file /usr/bin/fio ${FIO_DIR}/fio 755 0 0" >> filelist-final.txt
+# end of iozone build
 fi
 
 if test ${BUILD_IOZONE} ; then
@@ -722,7 +770,7 @@ fi
 
 cd ${CURDIR}
 echo "file /usr/bin/iozone ${IOZONE_DIR}/iozone 755 0 0" >> filelist-final.txt
-# end of iozone build
+# end of fio build
 fi
 
 if test ${BUILD_KSELFTEST} ; then
@@ -783,6 +831,8 @@ case $1 in
     "pb1176")
 	# Splash image for VGA console
 	# echo "file /etc/splash.ppm etc/splash-640x480-rgba5551.ppm 644 0 0" >> filelist-final.txt
+	;;
+    "pb11mp")
 	;;
     "u300")
 	;;
