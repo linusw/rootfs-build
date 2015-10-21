@@ -14,6 +14,7 @@ BUILD_ALSA=
 BUILD_PERF=
 BUILD_KSELFTEST=
 BUILD_IIOTOOLS=
+BUILD_GPIOTOOLS=
 BUILD_LIBIIO=
 BUILD_TRINITY=
 BUILD_LTP=
@@ -21,7 +22,7 @@ BUILD_CRASHME=
 BUILD_IOZONE=
 BUILD_FIO=
 # If present, perf will be built and added to the filesystem
-LINUX_TREE=${HOME}/linux
+LINUX_TREE=${HOME}/linux-gpio
 
 # Helper function to copy one level of files and then one level
 # of links from a directory to another directory.
@@ -218,8 +219,9 @@ case $1 in
 	# BUILD_LTP=1
 	# BUILD_CRASHME=1
 	# BUILD_IOZONE=1
-	BUILD_BUSYBOX=
-	BUILD_KSELFTEST=1
+	# BUILD_KSELFTEST=1
+	# BUILD_BUSYBOX=
+	BUILD_GPIOTOOLS=1
 	cp etc/inittab-ux500 etc/inittab
 	echo "Ux500" > etc/hostname
 	;;
@@ -476,6 +478,9 @@ fi
 if test ${BUILD_IIOTOOLS} ; then
     BUILD_LINUX_HEADERS=1
 fi
+if test ${BUILD_GPIOTOOLS} ; then
+    BUILD_LINUX_HEADERS=1
+fi
 if test ${BUILD_LIBIIO} ; then
     BUILD_LINUX_HEADERS=1
 fi
@@ -608,6 +613,31 @@ if [ -d ${IIOTOOLS_DIR} ] ; then
 fi
 
 # end of IIO tools build
+fi
+
+if test ${BUILD_GPIOTOOLS} ; then
+
+GPIOTOOLS_DIR=${LINUX_TREE}/tools/gpio
+
+if [ -d ${GPIOTOOLS_DIR} ] ; then
+    echo "Building GPIO tools..."
+    if [ -d ${BUILDDIR}/gpiotools ] ; then
+	rf -rf ${BUILDDIR}/gpiotools
+    fi
+    mkdir -p ${BUILDDIR}/gpiotools
+    ARCH=${ARCH} \
+	CROSS_COMPILE=${CC_PREFIX}- \
+	O=${BUILDDIR}/gpiotools \
+	CFLAGS="${CFLAGS} -I${BUILDDIR}/include-linux/include" \
+	make -C ${GPIOTOOLS_DIR}
+    if [ ! $? -eq 0 ] ; then
+	echo "Build failed!"
+	exit 1
+    fi
+    echo "file /usr/bin/lsgpio ${GPIOTOOLS_DIR}/lsgpio 755 0 0" >> filelist-final.txt
+fi
+
+# end of GPIO tools build
 fi
 
 if test ${BUILD_LIBIIO} ; then
