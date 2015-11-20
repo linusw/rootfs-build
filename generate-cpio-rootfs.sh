@@ -765,6 +765,7 @@ fi
 
 cd ${FIO_DIR}
 git checkout configure
+make clean
 rm *.o
 mkdir -p ${STAGEDIR}/fio
 ./configure --prefix=${STAGEDIR}/fio --cc=${CC_PREFIX}-gcc --extra-cflags="${CFLAGS}"
@@ -773,7 +774,6 @@ if [ ! $? -eq 0 ] ; then
     echo "Build failed!"
     exit 1
 fi
-make install
 
 cd ${CURDIR}
 echo "file /usr/bin/fio ${FIO_DIR}/fio 755 0 0" >> filelist-final.txt
