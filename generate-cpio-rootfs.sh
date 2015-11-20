@@ -171,6 +171,16 @@ case $1 in
 	cp etc/inittab-nhk8815 etc/inittab
 	echo "NHK8815" > etc/hostname
 	;;
+    "kirkwood")
+	echo "Building Kirkwood root filesystem"
+	export ARCH=arm
+	CC_PREFIX=armv5l
+	CC_DIR=/var/linus/cross-compiler-armv5l
+	LIBCBASE=${CC_DIR}
+	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork -march=armv5te -mtune=xscale"
+	cp etc/inittab-kirkwood etc/inittab
+	echo "Kirkwood" > etc/hostname
+	;;
     "pb1176")
 	echo "Building ARM RealView PB1176 root filesystem"
 	export ARCH=arm
@@ -209,19 +219,20 @@ case $1 in
 	export ARCH=arm
 	CC_PREFIX=arm-linux-gnueabihf
 	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux
-	# CC_DIR=/var/linus/gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf
+	# CC_DIR=/var/linus/gcc-linaro-5.1-2015.08-x86_64_arm-linux-gnueabihf
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
+	# BUILD_BUSYBOX=
 	# BUILD_ALSA=1
-	# BUILD_IIOTOOLS=1
+	BUILD_IIOTOOLS=1
 	# BUILD_LIBIIO=
 	# BUILD_TRINITY=1
 	# BUILD_LTP=1
 	# BUILD_CRASHME=1
 	# BUILD_IOZONE=1
 	# BUILD_KSELFTEST=1
-	# BUILD_BUSYBOX=
-	BUILD_GPIOTOOLS=1
+	# BUILD_GPIOTOOLS=1
+	# BUILD_FIO=1
 	cp etc/inittab-ux500 etc/inittab
 	echo "Ux500" > etc/hostname
 	;;
@@ -857,6 +868,8 @@ case $1 in
     "msm8660")
 	;;
     "nhk8815")
+	;;
+    "kirkwood")
 	;;
     "pb1176")
 	# Splash image for VGA console
