@@ -872,8 +872,6 @@ case $1 in
     "kirkwood")
 	;;
     "pb1176")
-	# Splash image for VGA console
-	# echo "file /etc/splash.ppm etc/splash-640x480-rgba5551.ppm 644 0 0" >> filelist-final.txt
 	;;
     "pb11mp")
 	;;
