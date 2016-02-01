@@ -4,17 +4,19 @@
 
 [ -f /etc/splash.ppm ] || exit 0
 
-[ -f /etc/vgamode ] || exit 0
-
-VGAMODE=`cat /etc/vgamode`
+if test -f /etc/vgamode ; then
+    VGAMODE=`cat /etc/vgamode`
+fi
 
 case "$1" in
-     start)
+    start)
 	# Show splash screen
-	fbset ${VGAMODE}
+	if ! test -z "${VGAMODE}" ; then
+	    fbset ${VGAMODE}
+	fi
 	fbsplash -s /etc/splash.ppm
 	;;
-     stop)
+    stop)
 	# Shut down screen?
 	;;
 esac

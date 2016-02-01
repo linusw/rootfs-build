@@ -868,6 +868,10 @@ case $1 in
     "msm8660")
 	;;
     "nhk8815")
+	# Splash image for VGA console
+	# echo "800x480-60-rgb888-24bpp" > ${STAGEDIR}/etc/vgamode
+	# echo "file /etc/vgamode ${STAGEDIR}/etc/vgamode 644 0 0" >> filelist-final.txt
+	echo "file /etc/splash.ppm etc/splash-800x480.ppm 644 0 0" >> filelist-final.txt
 	;;
     "kirkwood")
 	;;
