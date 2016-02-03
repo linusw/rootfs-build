@@ -269,8 +269,8 @@ case $1 in
 	# BUILD_CRASHME=1
 	# BUILD_LTP=1
 	# BUILD_KSELFTEST=1
-	BUILD_BUSYBOX=
-	BUILD_FIO=1
+	# BUILD_BUSYBOX=
+	# BUILD_FIO=1
 	;;
     "vexpress")
 	echo "Building Versatile Express root filesystem"
@@ -362,6 +362,66 @@ mkdir ${STAGEDIR}/usr/sbin
 mkdir ${STAGEDIR}/usr/share
 mkdir ${BUILDDIR}
 
+# Trigger all header builds like this
+if test ${BUILD_BUSYBOX} ; then
+    BUILD_LINUX_HEADERS=1
+fi
+if test ${BUILD_FBTEST} ; then
+    BUILD_LINUX_HEADERS=1
+fi
+if test ${BUILD_IIOTOOLS} ; then
+    BUILD_LINUX_HEADERS=1
+fi
+if test ${BUILD_GPIOTOOLS} ; then
+    BUILD_LINUX_HEADERS=1
+fi
+if test ${BUILD_LIBIIO} ; then
+    BUILD_LINUX_HEADERS=1
+fi
+if test ${BUILD_TRINITY} ; then
+    BUILD_LINUX_HEADERS=1
+fi
+if test ${BUILD_LTP} ; then
+    BUILD_LINUX_HEADERS=1
+fi
+if test ${BUILD_CRASHME} ; then
+    BUILD_LINUX_HEADERS=1
+fi
+if test ${BUILD_IOZONE} ; then
+    BUILD_LINUX_HEADERS=1
+fi
+if test ${BUILD_FIO} ; then
+    BUILD_LINUX_HEADERS=1
+fi
+
+if test ${BUILD_LINUX_HEADERS} ; then
+
+if [ -d ${LINUX_TREE} ] ; then
+    echo "Building linux headers..."
+    if [ -d ${BUILDDIR}/include-linux ] ; then
+	rf -rf ${BUILDDIR}/include-linux
+    fi
+    mkdir -p ${BUILDDIR}/include-linux
+    if test ${ARCH} = aarch64 ; then
+	LINUXARCH=arm64
+    else
+	LINUXARCH=${ARCH}
+    fi
+    make -C ${LINUX_TREE} headers_install ARCH=${LINUXARCH} INSTALL_HDR_PATH=${BUILDDIR}/include-linux
+    if [ ! $? -eq 0 ] ; then
+	echo "Build failed!"
+	exit 1
+    fi
+fi
+
+# Now use these includes in subsequent builds
+CFLAGS="${CFLAGS} -I${BUILDDIR}/include-linux/include"
+echo "New CFLAGS: ${CFLAGS}"
+
+# end of building Linux headers
+
+fi
+
 if test ${BUILD_BUSYBOX} ; then
 
 # Clone the busybox git if we don't have it...
@@ -380,9 +440,9 @@ echo "Configuring cross compiler etc..."
 
 # Comment in this line to create a statically linked busybox
 #sed -i "s/^#.*CONFIG_STATIC.*/CONFIG_STATIC=y/" ${BUILDDIR}/.config
-sed -i -e "s/CONFIG_CROSS_COMPILER_PREFIX=\"\"/CONFIG_CROSS_COMPILER_PREFIX=\"${CC_PREFIX}-\"/g" ${BUILDDIR}/.config
-sed -i -e "s/CONFIG_EXTRA_CFLAGS=\"\"/CONFIG_EXTRA_CFLAGS=\"${CFLAGS}\"/g" ${BUILDDIR}/.config
-sed -i -e "s/CONFIG_PREFIX=\".*\"/CONFIG_PREFIX=\"..\/stage\"/g" ${BUILDDIR}/.config
+sed -i -e "s;CONFIG_CROSS_COMPILER_PREFIX=\"\";CONFIG_CROSS_COMPILER_PREFIX=\"${CC_PREFIX}-\";g" ${BUILDDIR}/.config
+sed -i -e "s;CONFIG_EXTRA_CFLAGS=\"\";CONFIG_EXTRA_CFLAGS=\"${CFLAGS}\";g" ${BUILDDIR}/.config
+sed -i -e "s;CONFIG_PREFIX=\".*\";CONFIG_PREFIX=\"../stage\";g" ${BUILDDIR}/.config
 
 # Turn off "eject" command, we don't have a CDROM
 sed -i -e "s/CONFIG_EJECT=y/\# CONFIG_EJECT is not set/g" ${BUILDDIR}/.config
@@ -481,63 +541,6 @@ for file in ${LINKSUSRSBIN} ; do
     TARGET=`readlink $file`
     echo "slink /sbin/${BASE} ${TARGET} 755 0 0" >> filelist-final.txt
 done;
-
-# Trigger all header builds like this
-if test ${BUILD_FBTEST} ; then
-    BUILD_LINUX_HEADERS=1
-fi
-if test ${BUILD_IIOTOOLS} ; then
-    BUILD_LINUX_HEADERS=1
-fi
-if test ${BUILD_GPIOTOOLS} ; then
-    BUILD_LINUX_HEADERS=1
-fi
-if test ${BUILD_LIBIIO} ; then
-    BUILD_LINUX_HEADERS=1
-fi
-if test ${BUILD_TRINITY} ; then
-    BUILD_LINUX_HEADERS=1
-fi
-if test ${BUILD_LTP} ; then
-    BUILD_LINUX_HEADERS=1
-fi
-if test ${BUILD_CRASHME} ; then
-    BUILD_LINUX_HEADERS=1
-fi
-if test ${BUILD_IOZONE} ; then
-    BUILD_LINUX_HEADERS=1
-fi
-if test ${BUILD_FIO} ; then
-    BUILD_LINUX_HEADERS=1
-fi
-
-if test ${BUILD_LINUX_HEADERS} ; then
-
-if [ -d ${LINUX_TREE} ] ; then
-    echo "Building linux headers..."
-    if [ -d ${BUILDDIR}/include-linux ] ; then
-	rf -rf ${BUILDDIR}/include-linux
-    fi
-    mkdir -p ${BUILDDIR}/include-linux
-    if test ${ARCH} = aarch64 ; then
-	LINUXARCH=arm64
-    else
-	LINUXARCH=${ARCH}
-    fi
-    make -C ${LINUX_TREE} headers_install ARCH=${LINUXARCH} INSTALL_HDR_PATH=${BUILDDIR}/include-linux
-    if [ ! $? -eq 0 ] ; then
-	echo "Build failed!"
-	exit 1
-    fi
-fi
-
-# Now use these includes in subsequent builds
-CFLAGS="${CFLAGS} -I${BUILDDIR}/include-linux/include"
-echo "New CFLAGS: ${CFLAGS}"
-
-# end of building Linux headers
-
-fi
 
 if test ${BUILD_FBTEST} ; then
 
