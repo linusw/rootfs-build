@@ -96,7 +96,8 @@ case $1 in
 	CC_DIR=/var/linus/cross-compiler-armv4l
 	LIBCBASE=${CC_DIR}
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork -mcpu=strongarm1100"
-	BUILD_CRASHME=1
+	# BUILD_CRASHME=1
+	BUILD_GPIOTOOLS=1
 	cp etc/inittab-sa1100 etc/inittab
 	echo "h3600" > etc/hostname
 	;;
@@ -203,6 +204,16 @@ case $1 in
 	cp etc/inittab-realview etc/inittab
 	echo "PB11MPCore" > etc/hostname
 	;;
+    "a9mp")
+	echo "Building ARM RealView EB Cortex-A9 root filesystem"
+	export ARCH=arm
+	CC_PREFIX=arm-linux-gnueabihf
+	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux
+	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
+	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
+	cp etc/inittab-realview etc/inittab
+	echo "EB-A9MPCore" > etc/hostname
+	;;
     "u300")
 	echo "Building ST-Ericsson U300 root filesystem"
 	export ARCH=arm
@@ -222,7 +233,7 @@ case $1 in
 	# CC_DIR=/var/linus/gcc-linaro-5.1-2015.08-x86_64_arm-linux-gnueabihf
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
-	# BUILD_BUSYBOX=
+	#BUILD_BUSYBOX=
 	# BUILD_ALSA=1
 	BUILD_IIOTOOLS=1
 	# BUILD_LIBIIO=
@@ -231,7 +242,7 @@ case $1 in
 	# BUILD_CRASHME=1
 	# BUILD_IOZONE=1
 	# BUILD_KSELFTEST=1
-	# BUILD_GPIOTOOLS=1
+	BUILD_GPIOTOOLS=1
 	# BUILD_FIO=1
 	cp etc/inittab-ux500 etc/inittab
 	echo "Ux500" > etc/hostname
@@ -271,6 +282,7 @@ case $1 in
 	# BUILD_KSELFTEST=1
 	# BUILD_BUSYBOX=
 	# BUILD_FIO=1
+	BUILD_GPIOTOOLS=1
 	;;
     "vexpress")
 	echo "Building Versatile Express root filesystem"
@@ -881,6 +893,8 @@ case $1 in
     "pb1176")
 	;;
     "pb11mp")
+	;;
+    "a9mp")
 	;;
     "u300")
 	;;
