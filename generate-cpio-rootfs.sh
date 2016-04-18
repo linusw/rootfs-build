@@ -202,15 +202,16 @@ case $1 in
     "pb11mp")
 	echo "Building ARM RealView PB11MPCore root filesystem"
 	export ARCH=arm
-	# CC_PREFIX=armv6l
-	# CC_DIR=/var/linus/cross-compiler-armv6l
-	# LIBCBASE=${CC_DIR}
-	CC_PREFIX=arm-linux-gnueabi
-	CC_DIR=/var/linus/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabi
-	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
+	CC_PREFIX=armv6l
+	CC_DIR=/var/linus/cross-compiler-armv6l
+	LIBCBASE=${CC_DIR}
+	# CC_PREFIX=arm-linux-gnueabi
+	# CC_DIR=/var/linus/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabi
+	# LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	# Notice: no thumb VFP hardfloat on Thumb1
 	# -mno-thumb -mno-thumb-interwork
 	CFLAGS="-marm -mabi=aapcs-linux -mcpu=mpcorenovfp"
+	BUILD_GPIOTOOLS=1
 	cp etc/inittab-realview etc/inittab
 	echo "PB11MPCore" > etc/hostname
 	;;
@@ -493,6 +494,11 @@ sed -i -e "s/CONFIG_FEATURE_SYNC_FANCY=y/\# CONFIG_FEATURE_SYNC_FANCY is not set
 # Nsenter has problems for some cross compilers
 sed -i -e "s/CONFIG_FEATURE_NSENTER_LONG_OPTS=y/\# CONFIG_FEATURE_NSENTER_LONG_OPTS is not set/g" ${BUILDDIR}/.config
 sed -i -e "s/CONFIG_NSENTER=y/\# CONFIG_NSENTER is not set/g" ${BUILDDIR}/.config
+# tcpudp/tcpsvd doesn't work with Landley's compilers
+sed -i -e "s/CONFIG_TCPSVD=y/\# CONFIG_TCPSVD is not set/g" ${BUILDDIR}/.config
+sed -i -e "s/CONFIG_UDPSVD=y/\# CONFIG_UDPSVD is not set/g" ${BUILDDIR}/.config
+# neither does runlevel
+sed -i -e "s/CONFIG_RUNLEVEL=y/\# CONFIG_RUNLEVEL is not set/g" ${BUILDDIR}/.config
 
 # We need taskset though for SMP tests
 sed -i -e "s/\# CONFIG_TASKSET is not set/CONFIG_TASKSET=y/g" ${BUILDDIR}/.config
