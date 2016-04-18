@@ -687,13 +687,10 @@ GPIOTOOLS_DIR=${LINUX_TREE}/tools/gpio
 
 if [ -d ${GPIOTOOLS_DIR} ] ; then
     echo "Building GPIO tools..."
-    if [ -d ${BUILDDIR}/gpiotools ] ; then
-	rf -rf ${BUILDDIR}/gpiotools
-    fi
-    mkdir -p ${BUILDDIR}/gpiotools
+    rm -f ${GPIOTOOLS_DIR}/lsgpio
+    rm -f ${GPIOTOOLS_DIR}/*.o
     ARCH=${ARCH} \
 	CROSS_COMPILE=${CC_PREFIX}- \
-	O=${BUILDDIR}/gpiotools \
 	CFLAGS="${CFLAGS} -I${BUILDDIR}/include-linux/include" \
 	make -C ${GPIOTOOLS_DIR}
     if [ ! $? -eq 0 ] ; then
