@@ -26,18 +26,24 @@ LINUX_TREE=${HOME}/linux-gpio
 
 # Helper function to copy one level of files and then one level
 # of links from a directory to another directory.
-function clone_dir()
+# Clones only shared objects, and strips them.
+#
+# Doesn't blacklist unused libraries as we don't know if there
+# is a binary using e.g. libasan or other exotic stuff.
+function clone_so_dir()
 {
     local SRCDIR=$1
     local DSTDIR=$2
     local FILES=`find ${SRCDIR} -maxdepth 1 -type f`
+    # -path '*.so*'`
     for file in ${FILES} ; do
 	local BASE=`basename $file`
 	cp $file ${DSTDIR}/${BASE}
-	# ${STRIP} -s ${DSTDIR}/${BASE}
+	${STRIP} -s ${DSTDIR}/${BASE}
     done;
     # Clone links from the toolchain binary library dir
     local LINKS=`find ${SRCDIR} -maxdepth 1 -type l`
+    # -path '*.so*'`
     cd ${DSTDIR}
     for file in ${LINKS} ; do
 	local BASE=`basename $file`
@@ -196,11 +202,15 @@ case $1 in
     "pb11mp")
 	echo "Building ARM RealView PB11MPCore root filesystem"
 	export ARCH=arm
-	CC_PREFIX=armv6l
-	CC_DIR=/var/linus/cross-compiler-armv6l
-	LIBCBASE=${CC_DIR}
+	# CC_PREFIX=armv6l
+	# CC_DIR=/var/linus/cross-compiler-armv6l
+	# LIBCBASE=${CC_DIR}
+	CC_PREFIX=arm-linux-gnueabi
+	CC_DIR=/var/linus/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabi
+	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	# Notice: no thumb VFP hardfloat on Thumb1
-	CFLAGS="-marm -mabi=aapcs-linux -mno-thumb -mno-thumb-interwork -mcpu=mpcore"
+	# -mno-thumb -mno-thumb-interwork
+	CFLAGS="-marm -mabi=aapcs-linux -mcpu=mpcorenovfp"
 	cp etc/inittab-realview etc/inittab
 	echo "PB11MPCore" > etc/hostname
 	;;
@@ -208,9 +218,10 @@ case $1 in
 	echo "Building ARM RealView EB Cortex-A9 root filesystem"
 	export ARCH=arm
 	CC_PREFIX=arm-linux-gnueabihf
-	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux
+	CC_DIR=/var/linus/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabihf
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
+	BUILD_GPIOTOOLS=1
 	cp etc/inittab-realview etc/inittab
 	echo "EB-A9MPCore" > etc/hostname
 	;;
@@ -229,8 +240,8 @@ case $1 in
 	echo "Building ST-Ericsson Ux500 root filesystem"
 	export ARCH=arm
 	CC_PREFIX=arm-linux-gnueabihf
-	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux
-	# CC_DIR=/var/linus/gcc-linaro-5.1-2015.08-x86_64_arm-linux-gnueabihf
+	# CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux
+	CC_DIR=/var/linus/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabihf
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
 	#BUILD_BUSYBOX=
@@ -251,7 +262,7 @@ case $1 in
 	echo "Building Samsung Exynos root filesystem"
 	export ARCH=arm
 	CC_PREFIX=arm-linux-gnueabihf
-	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux
+	CC_DIR=/var/linus/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabihf
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a15"
 	cp etc/inittab-exynos etc/inittab
@@ -264,6 +275,7 @@ case $1 in
 	CC_PREFIX=armv4tl
 	CC_DIR=/var/linus/cross-compiler-armv4tl
 	LIBCBASE=${CC_DIR}
+	# -mcpu=ep9312?
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -march=armv4t"
 	cp etc/inittab-simone etc/inittab
 	echo "SIMONE" > etc/hostname
@@ -271,10 +283,14 @@ case $1 in
     "versatile")
 	echo "Building ARM Versatile root filesystem"
 	export ARCH=arm
+	# CC_PREFIX=arm-linux-gnueabi
+	# CC_DIR=/var/linus/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabi
+	# LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CC_PREFIX=arm-none-linux-gnueabi
 	CC_DIR=/var/linus/arm-2010q1
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
-	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv5t -mtune=arm9tdmi"
+	# -msoft-float
+	CFLAGS="-marm -msoft-float -mabi=aapcs-linux -mthumb-interwork -mcpu=arm9tdmi"
 	cp etc/inittab-versatile etc/inittab
 	echo "Versatile" > etc/hostname
 	# BUILD_CRASHME=1
@@ -288,7 +304,7 @@ case $1 in
 	echo "Building Versatile Express root filesystem"
 	export ARCH=arm
 	CC_PREFIX=arm-linux-gnueabihf
-	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux
+	CC_DIR=/var/linus/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabihf
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a15"
 	cp etc/inittab-vexpress etc/inittab
@@ -329,7 +345,9 @@ echo "OUTFILE = ${OUTFILE}"
 
 echo "Check prerequisites..."
 echo "Set up cross compiler at: ${CC_DIR}"
-export PATH="${CC_DIR}/bin:${PATH}"
+# Use nothing but the standard paths, the CC path and current
+# dir for this environment, kill off everything else.
+export PATH="${CC_DIR}/bin:/usr/bin:/usr/sbin:/bin:/sbin:${CURDIR}"
 echo -n "Check crosscompiler ... "
 which ${CC_PREFIX}-gcc > /dev/null ; if [ ! $? -eq 0 ] ; then
     echo "ERROR: cross-compiler ${CC_PREFIX}-gcc not in PATH=$PATH!"
@@ -406,6 +424,14 @@ if test ${BUILD_FIO} ; then
     BUILD_LINUX_HEADERS=1
 fi
 
+# But these cross-compilers do not play well with native
+# Linux headers
+#echo ${CC_PREFIX} | grep "^armv.l$" ; \
+#    if [ $? -eq 0 ] ; \
+#    then BUILD_LINUX_HEADERS= ; \
+#	 echo "This cross compiler does not like custom Linux headers" ; \
+#    fi
+
 if test ${BUILD_LINUX_HEADERS} ; then
 
 if [ -d ${LINUX_TREE} ] ; then
@@ -460,6 +486,14 @@ sed -i -e "s;CONFIG_PREFIX=\".*\";CONFIG_PREFIX=\"../stage\";g" ${BUILDDIR}/.con
 sed -i -e "s/CONFIG_EJECT=y/\# CONFIG_EJECT is not set/g" ${BUILDDIR}/.config
 sed -i -e "s/CONFIG_FEATURE_EJECT_SCSI=y/\# CONFIG_FEATURE_EJECT_SCSI is not set/g" ${BUILDDIR}/.config
 
+# Unshare does not compile for some cross compilers
+sed -i -e "s/CONFIG_FEATURE_UNSHARE=y/\# CONFIG_FEATURE_UNSHARE is not set/g" ${BUILDDIR}/.config
+# Fancy sync has problems with some cross compilers
+sed -i -e "s/CONFIG_FEATURE_SYNC_FANCY=y/\# CONFIG_FEATURE_SYNC_FANCY is not set/g" ${BUILDDIR}/.config
+# Nsenter has problems for some cross compilers
+sed -i -e "s/CONFIG_FEATURE_NSENTER_LONG_OPTS=y/\# CONFIG_FEATURE_NSENTER_LONG_OPTS is not set/g" ${BUILDDIR}/.config
+sed -i -e "s/CONFIG_NSENTER=y/\# CONFIG_NSENTER is not set/g" ${BUILDDIR}/.config
+
 # We need taskset though for SMP tests
 sed -i -e "s/\# CONFIG_TASKSET is not set/CONFIG_TASKSET=y/g" ${BUILDDIR}/.config
 
@@ -479,14 +513,14 @@ fi
 
 # First the flat library where arch-independent stuff will
 # end up
-clone_dir ${LIBCBASE}/lib ${STAGEDIR}/lib
+clone_so_dir ${LIBCBASE}/lib ${STAGEDIR}/lib
 
 # The C library may be in a per-arch subdir (multiarch)
 # OR it may not...
 if [ -d ${LIBCBASE}/lib/${CC_PREFIX} ] ; then
     mkdir -p ${STAGEDIR}/lib/${CC_PREFIX}
     echo "dir /lib/${CC_PREFIX} 755 0 0" >> filelist-final.txt
-    clone_dir ${LIBCBASE}/lib/${CC_PREFIX} ${STAGEDIR}/lib/${CC_PREFIX}
+    clone_so_dir ${LIBCBASE}/lib/${CC_PREFIX} ${STAGEDIR}/lib/${CC_PREFIX}
 fi
 
 # Add files by searching stage directory
