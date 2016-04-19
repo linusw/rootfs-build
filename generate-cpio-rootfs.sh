@@ -287,19 +287,18 @@ case $1 in
 	# CC_PREFIX=arm-linux-gnueabi
 	# CC_DIR=/var/linus/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabi
 	# LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
-	CC_PREFIX=arm-none-linux-gnueabi
-	CC_DIR=/var/linus/arm-2010q1
-	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
-	# -msoft-float
-	CFLAGS="-marm -msoft-float -mabi=aapcs-linux -mthumb-interwork -mcpu=arm9tdmi"
-	cp etc/inittab-versatile etc/inittab
-	echo "Versatile" > etc/hostname
+	CC_PREFIX=armv5l
+	CC_DIR=/var/linus/cross-compiler-armv5l
+	LIBCBASE=${CC_DIR}
+	CFLAGS="-marm -msoft-float -mabi=aapcs-linux -mcpu=arm9tdmi"
 	# BUILD_CRASHME=1
 	# BUILD_LTP=1
 	# BUILD_KSELFTEST=1
 	# BUILD_BUSYBOX=
 	# BUILD_FIO=1
 	BUILD_GPIOTOOLS=1
+	cp etc/inittab-versatile etc/inittab
+	echo "Versatile" > etc/hostname
 	;;
     "vexpress")
 	echo "Building Versatile Express root filesystem"
