@@ -145,16 +145,15 @@ case $1 in
 	#CC_PREFIX=armv4l
 	#CC_DIR=/var/linus/cross-compiler-armv4l
 	#LIBCBASE=${CC_DIR}
-	#CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork -mcpu=arm920t"
+	#CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork -mcpu=arm9tdmi"
 
 	# Code Sourcery
 	CC_PREFIX=arm-none-linux-gnueabi
 	CC_DIR=/var/linus/arm-2010q1
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc/armv4t
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv4t -mtune=arm9tdmi"
-	# BUILD_TRINITY=1
-	# BUILD_CRASHME=1
-	BUILD_IOZONE=1
+
+	BUILD_GPIOTOOLS=1
 	cp etc/inittab-integrator etc/inittab
 	echo "integrator" > etc/hostname
 	;;
