@@ -34,16 +34,14 @@ function clone_so_dir()
 {
     local SRCDIR=$1
     local DSTDIR=$2
-    local FILES=`find ${SRCDIR} -maxdepth 1 -type f`
-    # -path '*.so*'`
+    local FILES=`find ${SRCDIR} -maxdepth 1 -type f -path '*.so*'`
     for file in ${FILES} ; do
 	local BASE=`basename $file`
 	cp $file ${DSTDIR}/${BASE}
 	${STRIP} -s ${DSTDIR}/${BASE}
     done;
     # Clone links from the toolchain binary library dir
-    local LINKS=`find ${SRCDIR} -maxdepth 1 -type l`
-    # -path '*.so*'`
+    local LINKS=`find ${SRCDIR} -maxdepth 1 -type l -path '*.so*'`
     cd ${DSTDIR}
     for file in ${LINKS} ; do
 	local BASE=`basename $file`
