@@ -55,6 +55,7 @@ slink /etc/mtab /proc/mounts 755 0 0
 dir /proc 755 0 0
 dir /sys 755 0 0
 dir /mnt 755 0 0
+dir /config 755 0 0
 dir /debug 755 0 0
 dir /tmp 755 0 0
 dir /var 755 0 0
