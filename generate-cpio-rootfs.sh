@@ -22,7 +22,7 @@ BUILD_CRASHME=
 BUILD_IOZONE=
 BUILD_FIO=
 # If present, perf will be built and added to the filesystem
-LINUX_TREE=${HOME}/linux-gpio
+LINUX_TREE=${HOME}/src/linux-trees/linux-nomadik
 
 # Helper function to copy one level of files and then one level
 # of links from a directory to another directory.
@@ -168,6 +168,8 @@ case $1 in
 	CC_DIR=/var/linus/cross-compiler-armv5l
 	LIBCBASE=${CC_DIR}
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork -march=armv5te -mtune=arm926ej-s"
+	BUILD_IIOTOOLS=1
+	BUILD_GPIOTOOLS=1
 	cp etc/inittab-nhk8815 etc/inittab
 	echo "NHK8815" > etc/hostname
 	;;
