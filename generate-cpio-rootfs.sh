@@ -159,7 +159,7 @@ case $1 in
 	echo "Building Qualcomm MSM8660 root filesystem"
 	export ARCH=arm
 	CC_PREFIX=arm-linux-gnueabihf
-	CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux
+	CC_DIR=/var/linus/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabihf
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
 	cp etc/inittab-msm8660 etc/inittab
@@ -172,6 +172,8 @@ case $1 in
 	CC_DIR=/var/linus/cross-compiler-armv5l
 	LIBCBASE=${CC_DIR}
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork -march=armv5te -mtune=arm926ej-s"
+	BUILD_IIOTOOLS=1
+	BUILD_GPIOTOOLS=1
 	cp etc/inittab-nhk8815 etc/inittab
 	echo "NHK8815" > etc/hostname
 	;;
@@ -684,6 +686,7 @@ GPIOTOOLS_DIR=${LINUX_TREE}/tools/gpio
 if [ -d ${GPIOTOOLS_DIR} ] ; then
     echo "Building GPIO tools..."
     rm -f ${GPIOTOOLS_DIR}/lsgpio
+    rm -f ${GPIOTOOLS_DIR}/gpio-hammer
     rm -f ${GPIOTOOLS_DIR}/*.o
     ARCH=${ARCH} \
 	CROSS_COMPILE=${CC_PREFIX}- \
@@ -694,6 +697,7 @@ if [ -d ${GPIOTOOLS_DIR} ] ; then
 	exit 1
     fi
     echo "file /usr/bin/lsgpio ${GPIOTOOLS_DIR}/lsgpio 755 0 0" >> filelist-final.txt
+    echo "file /usr/bin/gpio-hammer ${GPIOTOOLS_DIR}/gpio-hammer 755 0 0" >> filelist-final.txt
 fi
 
 # end of GPIO tools build
