@@ -22,7 +22,7 @@ BUILD_CRASHME=
 BUILD_IOZONE=
 BUILD_FIO=
 # If present, perf will be built and added to the filesystem
-LINUX_TREE=${HOME}/src/linux-trees/linux-nomadik
+LINUX_TREE=${HOME}/linux-gpio
 
 # Helper function to copy one level of files and then one level
 # of links from a directory to another directory.
@@ -105,6 +105,18 @@ case $1 in
 	cp etc/inittab-sa1100 etc/inittab
 	echo "h3600" > etc/hostname
 	;;
+    "gemini")
+	echo "Building FA526 Gemini ARMv4 root filesystem"
+	export ARCH=arm
+	# Use ARMv4l base for FA526 rootfs builds
+	# This is the convention of Rob Landley's binaries
+	CC_PREFIX=armv4l
+	CC_DIR=/var/linus/cross-compiler-armv4l
+	LIBCBASE=${CC_DIR}
+	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork"
+	cp etc/inittab-gemini etc/inittab
+	echo "gemini" > etc/hostname
+	;;
     "footbridge")
 	echo "Building SA110 Footbridge ARMv4 root filesystem"
 	export ARCH=arm
@@ -162,6 +174,8 @@ case $1 in
 	CC_DIR=/var/linus/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabihf
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
+	BUILD_IIOTOOLS=1
+	BUILD_GPIOTOOLS=1
 	cp etc/inittab-msm8660 etc/inittab
 	echo "msm8660" > etc/hostname
 	;;
@@ -214,6 +228,18 @@ case $1 in
 	cp etc/inittab-realview etc/inittab
 	echo "PB11MPCore" > etc/hostname
 	;;
+    "eb")
+	echo "Building ARM RealView EB ARM1136 root filesystem"
+	export ARCH=arm
+	CC_PREFIX=armv6l
+	CC_DIR=/var/linus/cross-compiler-armv6l
+	LIBCBASE=${CC_DIR}
+	# Notice: no thumb VFP hardfloat on Thumb1
+	# -mno-thumb -mno-thumb-interwork
+	CFLAGS="-marm -mabi=aapcs-linux -mcpu=arm1136j-s"
+	cp etc/inittab-realview etc/inittab
+	echo "EB 1136" > etc/hostname
+	;;
     "a9mp")
 	echo "Building ARM RealView EB Cortex-A9 root filesystem"
 	export ARCH=arm
@@ -244,7 +270,7 @@ case $1 in
 	CC_DIR=/var/linus/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabihf
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
-	#BUILD_BUSYBOX=
+	# BUILD_BUSYBOX=
 	# BUILD_ALSA=1
 	BUILD_IIOTOOLS=1
 	# BUILD_LIBIIO=
@@ -685,9 +711,7 @@ GPIOTOOLS_DIR=${LINUX_TREE}/tools/gpio
 
 if [ -d ${GPIOTOOLS_DIR} ] ; then
     echo "Building GPIO tools..."
-    rm -f ${GPIOTOOLS_DIR}/lsgpio
-    rm -f ${GPIOTOOLS_DIR}/gpio-hammer
-    rm -f ${GPIOTOOLS_DIR}/*.o
+    make -C ${GPIOTOOLS_DIR} clean
     ARCH=${ARCH} \
 	CROSS_COMPILE=${CC_PREFIX}- \
 	CFLAGS="${CFLAGS} -I${BUILDDIR}/include-linux/include" \
@@ -698,6 +722,7 @@ if [ -d ${GPIOTOOLS_DIR} ] ; then
     fi
     echo "file /usr/bin/lsgpio ${GPIOTOOLS_DIR}/lsgpio 755 0 0" >> filelist-final.txt
     echo "file /usr/bin/gpio-hammer ${GPIOTOOLS_DIR}/gpio-hammer 755 0 0" >> filelist-final.txt
+    echo "file /usr/bin/gpio-event-mon ${GPIOTOOLS_DIR}/gpio-event-mon 755 0 0" >> filelist-final.txt
 fi
 
 # end of GPIO tools build
@@ -907,6 +932,8 @@ case $1 in
 	# Splash image for VGA console
 	echo "file /etc/splash-320x240.ppm etc/splash-320x240.ppm 644 0 0" >> filelist-final.txt
 	;;
+    "gemini")
+	;;
     "footbridge")
 	;;
     "nslu2")
@@ -930,6 +957,8 @@ case $1 in
     "pb1176")
 	;;
     "pb11mp")
+	;;
+    "eb")
 	;;
     "a9mp")
 	;;
