@@ -698,7 +698,7 @@ if [ -d ${IIOTOOLS_DIR} ] ; then
 	exit 1
     fi
     echo "file /usr/bin/lsiio ${IIOTOOLS_DIR}/lsiio 755 0 0" >> filelist-final.txt
-    echo "file /usr/bin/generic_buffer ${IIOTOOLS_DIR}/generic_buffer 755 0 0" >> filelist-final.txt
+    echo "file /usr/bin/iio_generic_buffer ${IIOTOOLS_DIR}/iio_generic_buffer 755 0 0" >> filelist-final.txt
     echo "file /usr/bin/iio_event_monitor ${IIOTOOLS_DIR}/iio_event_monitor 755 0 0" >> filelist-final.txt
 fi
 
