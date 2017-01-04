@@ -21,6 +21,7 @@ BUILD_LTP=
 BUILD_CRASHME=
 BUILD_IOZONE=
 BUILD_FIO=
+BUILD_MMCUTILS=
 # If present, perf will be built and added to the filesystem
 LINUX_TREE=${HOME}/src/linux-trees/linux
 
@@ -176,6 +177,7 @@ case $1 in
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
 	BUILD_IIOTOOLS=1
 	BUILD_GPIOTOOLS=1
+	BUILD_MMCUTILS=1
 	cp etc/inittab-msm8660 etc/inittab
 	echo "msm8660" > etc/hostname
 	;;
@@ -266,7 +268,6 @@ case $1 in
 	echo "Building ST-Ericsson Ux500 root filesystem"
 	export ARCH=arm
 	CC_PREFIX=arm-linux-gnueabihf
-	# CC_DIR=/var/linus/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux
 	CC_DIR=/var/linus/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabihf
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
@@ -277,10 +278,11 @@ case $1 in
 	# BUILD_TRINITY=1
 	# BUILD_LTP=1
 	# BUILD_CRASHME=1
-	# BUILD_IOZONE=1
+	BUILD_IOZONE=1
 	# BUILD_KSELFTEST=1
 	BUILD_GPIOTOOLS=1
 	# BUILD_FIO=1
+	BUILD_MMCUTILS=1
 	cp etc/inittab-ux500 etc/inittab
 	echo "Ux500" > etc/hostname
 	;;
@@ -446,6 +448,9 @@ if test ${BUILD_IOZONE} ; then
     BUILD_LINUX_HEADERS=1
 fi
 if test ${BUILD_FIO} ; then
+    BUILD_LINUX_HEADERS=1
+fi
+if test ${BUILD_MMCUTILS} ; then
     BUILD_LINUX_HEADERS=1
 fi
 
@@ -891,6 +896,33 @@ echo "file /usr/bin/iozone ${IOZONE_DIR}/iozone 755 0 0" >> filelist-final.txt
 # end of fio build
 fi
 
+if test ${BUILD_MMCUTILS} ; then
+
+if [ ! -d mmc-utils ] ; then
+    echo "It appears we're missing a mmc-utils git, cloning it."
+    git clone git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc-utils.git
+    if [ ! -d mmc-utils ] ; then
+	echo "Failed. ABORTING."
+	exit 1
+    fi
+fi
+
+echo "Building MMC-UTILS..."
+cd mmc-utils
+make clean
+echo "Compiler: ${CC_PREFIX}-gcc ${CFLAGS}"
+CC=${CC_PREFIX}-gcc CFLAGS="${CFLAGS} -g -O2" make all
+if [ ! $? -eq 0 ] ; then
+    echo "MMC-utils build failed!"
+    exit 1
+fi
+cd ${CURDIR}
+echo "file /usr/bin/mmc ${CURDIR}/mmc-utils/mmc 755 0 0" >> filelist-final.txt
+
+# end of mmcutils build
+fi
+
+
 if test ${BUILD_KSELFTEST} ; then
 
 SELFTEST_DIR=${LINUX_TREE}/tools/testing/selftests
@@ -983,6 +1015,10 @@ case $1 in
 	echo "file /etc/splash.ppm etc/splash-640x480.ppm 644 0 0" >> filelist-final.txt
 	;;
     "vexpress")
+	# Splash image for VGA console
+	echo "640x480-60-rgba5551" > ${STAGEDIR}/etc/vgamode
+	echo "file /etc/vgamode ${STAGEDIR}/etc/vgamode 644 0 0" >> filelist-final.txt
+	echo "file /etc/splash.ppm etc/splash-640x480.ppm 644 0 0" >> filelist-final.txt
 	;;
     "aarch64")
 	;;
