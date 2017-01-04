@@ -22,7 +22,7 @@ BUILD_CRASHME=
 BUILD_IOZONE=
 BUILD_FIO=
 # If present, perf will be built and added to the filesystem
-LINUX_TREE=${HOME}/linux-gpio
+LINUX_TREE=${HOME}/src/linux-trees/linux
 
 # Helper function to copy one level of files and then one level
 # of links from a directory to another directory.
