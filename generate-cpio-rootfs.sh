@@ -272,13 +272,13 @@ case $1 in
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
 	# BUILD_BUSYBOX=
-	# BUILD_ALSA=1
+	BUILD_ALSA=1
 	BUILD_IIOTOOLS=1
 	# BUILD_LIBIIO=
 	# BUILD_TRINITY=1
 	# BUILD_LTP=1
 	# BUILD_CRASHME=1
-	BUILD_IOZONE=1
+	# BUILD_IOZONE=1
 	# BUILD_KSELFTEST=1
 	BUILD_GPIOTOOLS=1
 	# BUILD_FIO=1
@@ -421,6 +421,9 @@ mkdir ${BUILDDIR}
 
 # Trigger all header builds like this
 if test ${BUILD_BUSYBOX} ; then
+    BUILD_LINUX_HEADERS=1
+fi
+if test ${BUILD_ALSA} ; then
     BUILD_LINUX_HEADERS=1
 fi
 if test ${BUILD_FBTEST} ; then
@@ -646,16 +649,13 @@ fi
 echo "Compiling tinyalsa..."
 cd tinyalsa
 make clean
-git checkout Makefile
-# Augment CFLAGS in the Makefile!
-sed -i -e "s/^CFLAGS =.*$/CFLAGS = ${CFLAGS} -c -fPIC -Wall/g" Makefile
-make CROSS_COMPILE=${CC_PREFIX}-
+make CROSS_COMPILE=${CC_PREFIX}- CFLAGS="${CFLAGS} -I${CURDIR}/tinyalsa/include -L${CURDIR}/tinyalsa/src"
 cd ${CURDIR}
-echo "file /usr/lib/libtinyalsa.so ${CURDIR}/tinyalsa/libtinyalsa.so 755 0 0" >> filelist-final.txt
-echo "file /usr/bin/tinycap ${CURDIR}/tinyalsa/tinycap 755 0 0" >> filelist-final.txt
-echo "file /usr/bin/tinymix ${CURDIR}/tinyalsa/tinymix 755 0 0" >> filelist-final.txt
-echo "file /usr/bin/tinypcminfo ${CURDIR}/tinyalsa/tinypcminfo 755 0 0" >> filelist-final.txt
-echo "file /usr/bin/tinyplay ${CURDIR}/tinyalsa/tinyplay 755 0 0" >> filelist-final.txt
+echo "file /usr/lib/libtinyalsa.so ${CURDIR}/tinyalsa/src/libtinyalsa.so 755 0 0" >> filelist-final.txt
+echo "file /usr/bin/tinycap ${CURDIR}/tinyalsa/utils/tinycap 755 0 0" >> filelist-final.txt
+echo "file /usr/bin/tinymix ${CURDIR}/tinyalsa/utils/tinymix 755 0 0" >> filelist-final.txt
+echo "file /usr/bin/tinypcminfo ${CURDIR}/tinyalsa/utils/tinypcminfo 755 0 0" >> filelist-final.txt
+echo "file /usr/bin/tinyplay ${CURDIR}/tinyalsa/utils/tinyplay 755 0 0" >> filelist-final.txt
 echo "file /usr/share/doriano48_low.wav ${CURDIR}/share/doriano48_low.wav 644 0 0" >> filelist-final.txt
 
 #end of ALSA build
