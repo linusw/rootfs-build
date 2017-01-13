@@ -652,6 +652,8 @@ make clean
 make CROSS_COMPILE=${CC_PREFIX}- CFLAGS="${CFLAGS} -I${CURDIR}/tinyalsa/include -L${CURDIR}/tinyalsa/src"
 cd ${CURDIR}
 echo "file /usr/lib/libtinyalsa.so ${CURDIR}/tinyalsa/src/libtinyalsa.so 755 0 0" >> filelist-final.txt
+echo "slink /usr/lib/libtinyalsa.so.1 libtinyalsa.so 755 0 0" >> filelist-final.txt
+echo "slink /usr/lib/libtinyalsa.so.1.1.0 libtinyalsa.so 755 0 0" >> filelist-final.txt
 echo "file /usr/bin/tinycap ${CURDIR}/tinyalsa/utils/tinycap 755 0 0" >> filelist-final.txt
 echo "file /usr/bin/tinymix ${CURDIR}/tinyalsa/utils/tinymix 755 0 0" >> filelist-final.txt
 echo "file /usr/bin/tinypcminfo ${CURDIR}/tinyalsa/utils/tinypcminfo 755 0 0" >> filelist-final.txt
