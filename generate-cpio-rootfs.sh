@@ -1019,6 +1019,8 @@ case $1 in
 	echo "file /etc/splash-320x240.ppm etc/splash-320x240.ppm 644 0 0" >> filelist-final.txt
 	;;
     "gemini")
+	echo "dir /lib/firmware 755 0 0" >> filelist-final.txt
+	echo "file /lib/firmware/rt2561s.bin firmware/rt2561s.bin 644 0 0" >> filelist-final.txt
 	;;
     "footbridge")
 	;;
