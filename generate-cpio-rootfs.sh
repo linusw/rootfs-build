@@ -22,6 +22,7 @@ BUILD_CRASHME=
 BUILD_IOZONE=
 BUILD_FIO=
 BUILD_MMCUTILS=
+BUILD_WIRELESS_TOOLS=
 # If present, perf will be built and added to the filesystem
 LINUX_TREE=${HOME}/src/linux-trees/linux
 
@@ -115,6 +116,7 @@ case $1 in
 	CC_DIR=/var/linus/cross-compiler-armv4l
 	LIBCBASE=${CC_DIR}
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork"
+	BUILD_WIRELESS_TOOLS=1
 	cp etc/inittab-gemini etc/inittab
 	echo "gemini" > etc/hostname
 	;;
@@ -454,6 +456,9 @@ if test ${BUILD_FIO} ; then
     BUILD_LINUX_HEADERS=1
 fi
 if test ${BUILD_MMCUTILS} ; then
+    BUILD_LINUX_HEADERS=1
+fi
+if test ${BUILD_WIRELESS_TOOLS} ; then
     BUILD_LINUX_HEADERS=1
 fi
 
@@ -922,6 +927,53 @@ cd ${CURDIR}
 echo "file /usr/bin/mmc ${CURDIR}/mmc-utils/mmc 755 0 0" >> filelist-final.txt
 
 # end of mmcutils build
+fi
+
+if test ${BUILD_WIRELESS_TOOLS} ; then
+
+WIRELESS_TOOLS_DIR=${CURDIR}/wireless_tools.29
+
+if [ -d ${WIRELESS_TOOLS_DIR} ] ; then
+    rm -rf ${WIRELESS_TOOLS_DIR}
+fi
+
+if [ ! -f wireless_tools.29.tar.gz ] ; then
+    echo "missing wireless_tools.29.tar.gz"
+    exit 1
+fi
+
+cd ${CURDIR}
+tar xvfz wireless_tools.29.tar.gz
+
+if [ ! -d ${WIRELESS_TOOLS_DIR} ] ; then
+    echo "It appears we're missing wireless_tools.29"
+    echo "Failed. ABORTING."
+    exit 1
+fi
+
+sed -i -e "s/CC = gcc/CC = ${CC_PREFIX}-gcc/g" ${WIRELESS_TOOLS_DIR}/Makefile
+sed -i -e "s;-Wpointer-arith -Wcast-qual -Winline -I.;-Wpointer-arith -Wcast-qual -Winline -I. ${CFLAGS};g" ${WIRELESS_TOOLS_DIR}/Makefile
+
+echo "Building Wireless tools..."
+cd ${WIRELESS_TOOLS_DIR}
+make clean
+echo "Compiler: ${CC_PREFIX}-gcc ${CFLAGS}"
+make all
+if [ ! $? -eq 0 ] ; then
+    echo "Wireless tools build failed!"
+    exit 1
+fi
+cd ${CURDIR}
+echo "file /usr/lib/libiw.so.29 ${WIRELESS_TOOLS_DIR}/libiw.so.29 755 0 0" >> filelist-final.txt
+echo "file /usr/sbin/ifrename ${WIRELESS_TOOLS_DIR}/ifrename 755 0 0" >> filelist-final.txt
+echo "file /usr/sbin/iwconfig ${WIRELESS_TOOLS_DIR}/iwconfig 755 0 0" >> filelist-final.txt
+echo "file /usr/sbin/iwevent ${WIRELESS_TOOLS_DIR}/iwevent 755 0 0" >> filelist-final.txt
+echo "file /usr/sbin/iwgetid ${WIRELESS_TOOLS_DIR}/iwgetid 755 0 0" >> filelist-final.txt
+echo "file /usr/sbin/iwlist ${WIRELESS_TOOLS_DIR}/iwlist 755 0 0" >> filelist-final.txt
+echo "file /usr/sbin/iwpriv ${WIRELESS_TOOLS_DIR}/iwpriv 755 0 0" >> filelist-final.txt
+echo "file /usr/sbin/iwspy ${WIRELESS_TOOLS_DIR}/iwspy 755 0 0" >> filelist-final.txt
+
+# end of wireless tools build
 fi
 
 
