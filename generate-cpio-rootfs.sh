@@ -116,6 +116,7 @@ case $1 in
 	CC_DIR=/var/linus/cross-compiler-armv4l
 	LIBCBASE=${CC_DIR}
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork"
+	BUILD_GPIOTOOLS=1
 	BUILD_WIRELESS_TOOLS=1
 	cp etc/inittab-gemini etc/inittab
 	echo "gemini" > etc/hostname
