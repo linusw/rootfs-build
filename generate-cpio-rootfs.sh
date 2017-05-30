@@ -24,7 +24,7 @@ BUILD_FIO=
 BUILD_MMCUTILS=
 BUILD_WIRELESS_TOOLS=
 # If present, perf will be built and added to the filesystem
-LINUX_TREE=${HOME}/src/linux-trees/linux
+LINUX_TREE=${HOME}/linux-stericsson
 
 # Helper function to copy one level of files and then one level
 # of links from a directory to another directory.
@@ -178,11 +178,28 @@ case $1 in
 	CC_DIR=/var/linus/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabihf
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
+
+	BUILD_ALSA=1
 	BUILD_IIOTOOLS=1
 	BUILD_GPIOTOOLS=1
-	BUILD_MMCUTILS=1
+	# BUILD_MMCUTILS=1
 	cp etc/inittab-msm8660 etc/inittab
 	echo "msm8660" > etc/hostname
+	;;
+    "nexus7")
+	echo "Building LGE Nexus 7 root filesystem"
+	export ARCH=arm
+	CC_PREFIX=arm-linux-gnueabihf
+	CC_DIR=/var/linus/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabihf
+	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
+	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
+
+	BUILD_ALSA=1
+	BUILD_IIOTOOLS=1
+	BUILD_GPIOTOOLS=1
+	# BUILD_MMCUTILS=1
+	cp etc/inittab-msm8660 etc/inittab
+	echo "nexus7" > etc/hostname
 	;;
     "nhk8815")
 	echo "Building Nomadik NHK8815 root filesystem"
@@ -1034,6 +1051,8 @@ case $1 in
 	echo "file /etc/splash.ppm etc/splash-640x480.ppm 644 0 0" >> filelist-final.txt
 	;;
     "msm8660")
+	;;
+    "nexus7")
 	;;
     "nhk8815")
 	# Splash image for VGA console
