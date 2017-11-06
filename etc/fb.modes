@@ -36,9 +36,29 @@ mode "1024x768-60-rgba5551"
     rgba 5/10,5/5,5/0,1/15
 endmode
 
+mode "640x480-60-rgb888"
+    geometry 640 480 640 480 24
+    timings 39722 48 16 33 10 96 2
+    rgba 8/0,8/8,8/16,0/0
+endmode
+
 mode "640x480-60-rgb565"
     # D: 25.175 MHz, H: 31.469 kHz, V: 59.94 Hz
     geometry 640 480 640 480 16
+    timings 39722 48 16 33 10 96 2
+    rgba 5/11,6/5,5/0,0/0
+endmode
+
+mode "640x480-0"
+    geometry 640 480 640 480 16
+    timings 0 0 0 0 0 0 0
+    accel true
+    rgba 5/11,6/5,5/0,0/0
+endmode
+
+mode "640x240-60-rgb565"
+    # D: 25.175 MHz, H: 31.469 kHz, V: 59.94 Hz
+    geometry 640 240 640 240 16
     timings 39722 48 16 33 10 96 2
     rgba 5/11,6/5,5/0,0/0
 endmode

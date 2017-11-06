@@ -23,8 +23,10 @@ BUILD_IOZONE=
 BUILD_FIO=
 BUILD_MMCUTILS=
 BUILD_WIRELESS_TOOLS=
+BUILD_LIBDRM=
+BUILD_ETHTOOL=
 # If present, perf will be built and added to the filesystem
-LINUX_TREE=${HOME}/linux-stericsson
+LINUX_TREE=${HOME}/src/linux-trees/linux-nomadik
 
 # Helper function to copy one level of files and then one level
 # of links from a directory to another directory.
@@ -116,8 +118,11 @@ case $1 in
 	CC_DIR=/var/linus/cross-compiler-armv4l
 	LIBCBASE=${CC_DIR}
 	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork"
+	#BUILD_BUSYBOX=
 	BUILD_GPIOTOOLS=1
 	BUILD_WIRELESS_TOOLS=1
+	#BUILD_FBTEST=1
+	BUILD_ETHTOOL=1
 	cp etc/inittab-gemini etc/inittab
 	echo "gemini" > etc/hostname
 	;;
@@ -477,6 +482,12 @@ if test ${BUILD_MMCUTILS} ; then
     BUILD_LINUX_HEADERS=1
 fi
 if test ${BUILD_WIRELESS_TOOLS} ; then
+    BUILD_LINUX_HEADERS=1
+fi
+if test ${BUILD_LIBDRM} ; then
+    BUILD_LINUX_HEADERS=1
+fi
+if test ${BUILD_ETHTOOL} ; then
     BUILD_LINUX_HEADERS=1
 fi
 
@@ -994,6 +1005,74 @@ echo "file /usr/sbin/iwspy ${WIRELESS_TOOLS_DIR}/iwspy 755 0 0" >> filelist-fina
 # end of wireless tools build
 fi
 
+if test ${BUILD_LIBDRM} ; then
+
+echo "Building libdrm..."
+
+if [ ! -d drm ] ; then
+    echo "It appears we're missing a libdrm git, cloning it."
+    git clone git://anongit.freedesktop.org/mesa/drm
+    if [ ! -d drm ] ; then
+	echo "Failed. ABORTING."
+	exit 1
+    fi
+fi
+
+mkdir -p ${STAGEDIR}/drm
+cd drm
+echo "Compiler: ${CC_PREFIX}-gcc ${CFLAGS}"
+./autogen.sh
+${CURDIR}/drm/configure CC=${CC_PREFIX}-gcc CFLAGS="$CFLAGS" --build x86_64 --host=${CROSS_HOST}
+make all
+if [ ! $? -eq 0 ] ; then
+    echo "libdrm build failed!"
+    exit 1
+fi
+cd ${CURDIR}
+
+# end of libdrm build
+fi
+
+
+if test ${BUILD_ETHTOOL} ; then
+
+ETHTOOL_DIR=${CURDIR}/ethtool-4.13
+
+if [ -d ${ETHTOOL_DIR} ] ; then
+    rm -rf ${ETHTOOL_DIR}
+fi
+
+if [ ! -f ethtool-4.13.tar.gz ] ; then
+    echo "missing ethtool-4.13.tar.gz"
+    exit 1
+fi
+
+cd ${CURDIR}
+tar xvfz ethtool-4.13.tar.gz
+
+if [ ! -d ${ETHTOOL_DIR} ] ; then
+    echo "It appears we're missing ${ETHTOOL_DIR}"
+    echo "Failed. ABORTING."
+    exit 1
+fi
+
+echo "Building Ethtool..."
+cd ${ETHTOOL_DIR}
+#./autogen.sh
+./configure CC=${CC_PREFIX}-gcc CFLAGS="$CFLAGS" --build x86_64 --host=${CROSS_HOST}
+make clean
+echo "Cleaned up"
+echo "Compiler: ${CC_PREFIX}-gcc ${CFLAGS}"
+CC=gcc CROSS_COMPILE=${CC_PREFIX}- CROSS_CFLAGS="${CFLAGS}" make all
+if [ ! $? -eq 0 ] ; then
+    echo "Ethtool build failed!"
+    exit 1
+fi
+cd ${CURDIR}
+echo "file /usr/sbin/ethtool ${ETHTOOL_DIR}/ethtool 755 0 0" >> filelist-final.txt
+
+# end of ethtool build
+fi
 
 if test ${BUILD_KSELFTEST} ; then
 
@@ -1039,6 +1118,10 @@ case $1 in
     "gemini")
 	echo "dir /lib/firmware 755 0 0" >> filelist-final.txt
 	echo "file /lib/firmware/rt2561s.bin firmware/rt2561s.bin 644 0 0" >> filelist-final.txt
+	# Splash image for VGA console
+	#echo "640x480-0" > ${STAGEDIR}/etc/vgamode
+	#echo "file /etc/vgamode ${STAGEDIR}/etc/vgamode 644 0 0" >> filelist-final.txt
+	#echo "file /etc/splash.ppm etc/splash-640x480.ppm 644 0 0" >> filelist-final.txt
 	;;
     "footbridge")
 	;;
