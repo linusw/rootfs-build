@@ -114,13 +114,17 @@ case $1 in
 	export ARCH=arm
 	# Use ARMv4l base for FA526 rootfs builds
 	# This is the convention of Rob Landley's binaries
-	CC_PREFIX=armv4l
-	CC_DIR=/var/linus/cross-compiler-armv4l
-	LIBCBASE=${CC_DIR}
-	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork"
+	# CC_PREFIX=armv4l
+	# CC_DIR=/var/linus/cross-compiler-armv4l
+	# LIBCBASE=${CC_DIR}
+	CC_PREFIX=arm-oe-linux-gnueabi
+	CC_DIR=/var/linus/oecore-x86_64-armv4-toolchain-nodistro/sysroots/x86_64-oesdk-linux/usr/bin/arm-oe-linux-gnueabi
+	LIBCBASE=/var/linus/oecore-x86_64-armv4-toolchain-nodistro/sysroots/armv4-oe-linux-gnueabi
+	CFLAGS="-march=armv4 -msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork --sysroot=/var/linus/oecore-x86_64-armv4-toolchain-nodistro/sysroots/armv4-oe-linux-gnueabi"
+	LDFLAGS="--sysroot=/var/linus/oecore-x86_64-armv4-toolchain-nodistro/sysroots/armv4-oe-linux-gnueabi"
 	#BUILD_BUSYBOX=
 	BUILD_GPIOTOOLS=1
-	BUILD_WIRELESS_TOOLS=1
+	#BUILD_WIRELESS_TOOLS=1
 	#BUILD_FBTEST=1
 	BUILD_ETHTOOL=1
 	cp etc/inittab-gemini etc/inittab
@@ -396,11 +400,16 @@ OUTFILE=${HOME}/rootfs-$1.cpio
 echo "OUTFILE = ${OUTFILE}"
 
 echo "Check prerequisites..."
-echo "Set up cross compiler at: ${CC_DIR}"
 # Use nothing but the standard paths, the CC path and current
 # dir for this environment, kill off everything else.
-export PATH="${CC_DIR}/bin:/usr/bin:/usr/sbin:/bin:/sbin:${CURDIR}"
-echo -n "Check crosscompiler ... "
+if [ -x ${CC_DIR}/${CC_PREFIX}-gcc ] ; then
+    echo "Crosscompiler found at ${CC_DIR}"
+    export PATH="${CC_DIR}:/usr/bin:/usr/sbin:/bin:/sbin:${CURDIR}"
+elif  [ -x ${CC_DIR}/bin/${CC_PREFIX}-gcc ] ; then
+    echo "Crosscompiler found at ${CC_DIR}/bin"
+    export PATH="${CC_DIR}/bin:/usr/bin:/usr/sbin:/bin:/sbin:${CURDIR}"
+fi
+echo -n "Check if we can find crosscompiler ... "
 which ${CC_PREFIX}-gcc > /dev/null ; if [ ! $? -eq 0 ] ; then
     echo "ERROR: cross-compiler ${CC_PREFIX}-gcc not in PATH=$PATH!"
     echo "ABORTING."
@@ -547,7 +556,11 @@ echo "Configuring cross compiler etc..."
 #sed -i "s/^#.*CONFIG_STATIC.*/CONFIG_STATIC=y/" ${BUILDDIR}/.config
 sed -i -e "s;CONFIG_CROSS_COMPILER_PREFIX=\"\";CONFIG_CROSS_COMPILER_PREFIX=\"${CC_PREFIX}-\";g" ${BUILDDIR}/.config
 sed -i -e "s;CONFIG_EXTRA_CFLAGS=\"\";CONFIG_EXTRA_CFLAGS=\"${CFLAGS}\";g" ${BUILDDIR}/.config
+sed -i -e "s;CONFIG_EXTRA_LDFLAGS=\"\";CONFIG_EXTRA_LDFLAGS=\"${LDFLAGS}\";g" ${BUILDDIR}/.config
 sed -i -e "s;CONFIG_PREFIX=\".*\";CONFIG_PREFIX=\"../stage\";g" ${BUILDDIR}/.config
+
+# This doesn't work on old compilers
+sed -i -e "s/CONFIG_FALLOCATE=y/\# CONFIG_FALLOCATE is not set/g" ${BUILDDIR}/.config
 
 # Turn off "eject" command, we don't have a CDROM
 sed -i -e "s/CONFIG_EJECT=y/\# CONFIG_EJECT is not set/g" ${BUILDDIR}/.config
@@ -756,6 +769,7 @@ if [ -d ${GPIOTOOLS_DIR} ] ; then
     ARCH=${ARCH} \
 	CROSS_COMPILE=${CC_PREFIX}- \
 	CFLAGS="${CFLAGS} -I${BUILDDIR}/include-linux/include" \
+	LDFLAGS="${LDFLAGS}" \
 	make -C ${GPIOTOOLS_DIR}
     if [ ! $? -eq 0 ] ; then
 	echo "Build failed!"
@@ -981,13 +995,13 @@ if [ ! -d ${WIRELESS_TOOLS_DIR} ] ; then
 fi
 
 sed -i -e "s/CC = gcc/CC = ${CC_PREFIX}-gcc/g" ${WIRELESS_TOOLS_DIR}/Makefile
-sed -i -e "s;-Wpointer-arith -Wcast-qual -Winline -I.;-Wpointer-arith -Wcast-qual -Winline -I. ${CFLAGS};g" ${WIRELESS_TOOLS_DIR}/Makefile
+sed -i -e "s;-Wpointer-arith -Wcast-qual -Winline -I.;-Wpointer-arith -Wcast-qual -I. ${CFLAGS};g" ${WIRELESS_TOOLS_DIR}/Makefile
 
 echo "Building Wireless tools..."
 cd ${WIRELESS_TOOLS_DIR}
 make clean
 echo "Compiler: ${CC_PREFIX}-gcc ${CFLAGS}"
-make all
+make all LDFLAGS="${LDFLAGS}"
 if [ ! $? -eq 0 ] ; then
     echo "Wireless tools build failed!"
     exit 1
