@@ -357,12 +357,13 @@ case $1 in
 	echo "Versatile" > etc/hostname
 	;;
     "vexpress")
-	echo "Building Versatile Express root filesystem"
+	echo "Building Versatile Express Cortex-A9 root filesystem"
 	export ARCH=arm
 	CC_PREFIX=arm-linux-gnueabihf
+	#CC_DIR=/var/linus/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabihf
 	CC_DIR=/var/linus/gcc-linaro-7.2.1-2017.11-x86_64_arm-linux-gnueabihf
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
-	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a15"
+	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
 	cp etc/inittab-vexpress etc/inittab
 	echo "Vexpress" > etc/hostname
 	;;
