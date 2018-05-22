@@ -171,10 +171,16 @@ case $1 in
 	#CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork -mcpu=arm9tdmi"
 
 	# Code Sourcery
-	CC_PREFIX=arm-none-linux-gnueabi
-	CC_DIR=/var/linus/arm-2010q1
-	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc/armv4t
-	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv4t -mtune=arm9tdmi"
+	# CC_PREFIX=arm-none-linux-gnueabi
+	# CC_DIR=/var/linus/arm-2010q1
+	# LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc/armv4t
+	# CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -mthumb-interwork -march=armv4t -mtune=arm9tdmi"
+
+	CC_PREFIX=arm-oe-linux-gnueabi
+	CC_DIR=/var/linus/oecore-x86_64-armv4-toolchain-nodistro/sysroots/x86_64-oesdk-linux/usr/bin/arm-oe-linux-gnueabi
+	LIBCBASE=/var/linus/oecore-x86_64-armv4-toolchain-nodistro/sysroots/armv4-oe-linux-gnueabi
+	CFLAGS="-march=armv4 -mtune=arm9tdmi -msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork --sysroot=/var/linus/oecore-x86_64-armv4-toolchain-nodistro/sysroots/armv4-oe-linux-gnueabi"
+	LDFLAGS="--sysroot=/var/linus/oecore-x86_64-armv4-toolchain-nodistro/sysroots/armv4-oe-linux-gnueabi"
 
 	BUILD_GPIOTOOLS=1
 	cp etc/inittab-integrator etc/inittab
@@ -381,8 +387,18 @@ case $1 in
 	BUILD_LTP=1
 	BUILD_IOZONE=1
 	;;
+    "zynqmp")
+	echo "Building ZynqMP Aarch64 root filesystem"
+	export ARCH=aarch64
+	CC_PREFIX=aarch64-linux-gnu
+	CC_DIR=/var/linus/gcc-linaro-7.2.1-2017.11-x86_64_aarch64-linux-gnu
+	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
+	CFLAGS="-march=armv8-a"
+	cp etc/inittab-zynqmp etc/inittab
+	echo "ZynqMP" > etc/hostname
+	;;
     *)
-	echo "Usage: $0 [i486|i586|h3600|footbridge|integrator|msm8660|nhk8815|pb1176|u300|ux500|exynos|versatile|vexpress|aarch64]"
+	echo "Usage: $0 [i486|i586|h3600|footbridge|gemini|integrator|msm8660|nhk8815|pb1176|u300|ux500|exynos|versatile|vexpress|aarch64|zynqmp]"
 	exit 1
 	;;
 esac
@@ -1195,6 +1211,8 @@ case $1 in
 	echo "file /etc/splash.ppm etc/splash-640x480.ppm 644 0 0" >> filelist-final.txt
 	;;
     "aarch64")
+	;;
+    "zynqmp")
 	;;
     *)
 	echo "Forgot to update special per-platform rules."
