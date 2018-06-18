@@ -26,7 +26,7 @@ BUILD_WIRELESS_TOOLS=
 BUILD_LIBDRM=
 BUILD_ETHTOOL=
 # If present, perf will be built and added to the filesystem
-LINUX_TREE=${HOME}/src/linux-trees/linux-nomadik
+LINUX_TREE=${HOME}/linux-gpio
 
 # Helper function to copy one level of files and then one level
 # of links from a directory to another directory.
@@ -396,6 +396,7 @@ case $1 in
 	CFLAGS="-march=armv8-a"
 	cp etc/inittab-zynqmp etc/inittab
 	echo "ZynqMP" > etc/hostname
+	BUILD_GPIOTOOLS=1
 	;;
     *)
 	echo "Usage: $0 [i486|i586|h3600|footbridge|gemini|integrator|msm8660|nhk8815|pb1176|u300|ux500|exynos|versatile|vexpress|aarch64|zynqmp]"
