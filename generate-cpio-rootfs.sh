@@ -304,7 +304,7 @@ case $1 in
 	echo "Building ST-Ericsson Ux500 root filesystem"
 	export ARCH=arm
 	CC_PREFIX=arm-linux-gnueabihf
-	CC_DIR=/var/linus/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabihf
+	CC_DIR=/var/linus/gcc-linaro-7.3.1-2018.05-x86_64_arm-linux-gnueabihf
 	LIBCBASE=${CC_DIR}/${CC_PREFIX}/libc
 	CFLAGS="-marm -mabi=aapcs-linux -mthumb -mthumb-interwork -mcpu=cortex-a9"
 	# BUILD_BUSYBOX=
@@ -336,11 +336,16 @@ case $1 in
 	echo "Building SIM.ONE ARMv4 root filesystem"
 	export ARCH=arm
 	# Rob's cross compiler
-	CC_PREFIX=armv4tl
-	CC_DIR=/var/linus/cross-compiler-armv4tl
-	LIBCBASE=${CC_DIR}
+	# CC_PREFIX=armv4tl
+	# CC_DIR=/var/linus/cross-compiler-armv4tl
+	# LIBCBASE=${CC_DIR}
 	# -mcpu=ep9312?
-	CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -march=armv4t"
+	# CFLAGS="-msoft-float -marm -mabi=aapcs-linux -mthumb -march=armv4t"
+	CC_PREFIX=arm-oe-linux-gnueabi
+	CC_DIR=/var/linus/oecore-x86_64-armv4-toolchain-nodistro/sysroots/x86_64-oesdk-linux/usr/bin/arm-oe-linux-gnueabi
+	LIBCBASE=/var/linus/oecore-x86_64-armv4-toolchain-nodistro/sysroots/armv4-oe-linux-gnueabi
+	CFLAGS="-march=armv4 -msoft-float -marm -mabi=aapcs-linux -mno-thumb-interwork --sysroot=/var/linus/oecore-x86_64-armv4-toolchain-nodistro/sysroots/armv4-oe-linux-gnueabi"
+	LDFLAGS="--sysroot=/var/linus/oecore-x86_64-armv4-toolchain-nodistro/sysroots/armv4-oe-linux-gnueabi"
 	cp etc/inittab-simone etc/inittab
 	echo "SIMONE" > etc/hostname
 	;;
