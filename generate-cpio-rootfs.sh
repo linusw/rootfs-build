@@ -142,17 +142,18 @@ case $1 in
 	cp etc/inittab-footbridge etc/inittab
 	echo "footbridge" > etc/hostname
 	;;
-    "nslu2")
-	echo "Building NSLU2 ARMv5TE XScale root filesystem"
+    "ixp4")
+	echo "Building IXP4 ARMv5TE XScale root filesystem"
 	export ARCH=arm
-	# This big-endian toolchain was generated with crosstool-ng
-	# configured for bigendian ARM and Linux as operating system
-	CC_PREFIX=armeb-unknown-linux-gnueabi
-	CC_DIR=/home/linus/x-tools/armeb-unknown-linux-gnueabi
-	LIBCBASE=${CC_DIR}/${CC_PREFIX}/sysroot
-	CFLAGS="-msoft-float -marm -mthumb -mthumb-interwork -march=armv5te -mtune=xscale -mbig-endian"
-	cp etc/inittab-xscale etc/inittab
-	echo "nslu2" > etc/hostname
+	CC_PREFIX=armeb-openwrt-linux
+	# This toolchain apparently needs this
+	export STAGING_DIR=${STAGEDIR}
+	CC_DIR=/var/linus/openwrt-toolchain-ixp4xx-generic_gcc-7.4.0_musl.Linux-x86_64/toolchain-armeb_xscale_gcc-7.4.0_musl
+	LIBCBASE=/var/linus/openwrt-toolchain-ixp4xx-generic_gcc-7.4.0_musl.Linux-x86_64/toolchain-armeb_xscale_gcc-7.4.0_musl/armeb-openwrt-linux
+	CFLAGS="-march=armv5te -msoft-float -marm -mthumb -mthumb-interwork --sysroot=/var/linus/openwrt-toolchain-ixp4xx-generic_gcc-7.4.0_musl.Linux-x86_64/toolchain-armeb_xscale_gcc-7.4.0_musl/armeb-openwrt-linux"
+	LDFLAGS="--sysroot=/var/linus/openwrt-toolchain-ixp4xx-generic_gcc-7.4.0_musl.Linux-x86_64/toolchain-armeb_xscale_gcc-7.4.0_musl/armeb-openwrt-linux"
+	cp etc/inittab-ixp4 etc/inittab
+	echo "ixp4" > etc/hostname
 	;;
     "integrator")
 	echo "Building Integrator ARMv4 root filesystem"
@@ -1157,7 +1158,7 @@ case $1 in
 	;;
     "footbridge")
 	;;
-    "nslu2")
+    "ixp4")
 	;;
     "integrator")
 	# Splash image for VGA console
